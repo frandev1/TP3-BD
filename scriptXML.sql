@@ -2,13 +2,13 @@ USE [sistemaTarjetaCredito]
 GO
 
 DECLARE @XmlData XML;
-SELECT @XmlData = CONVERT(XML, BULKColumn)
+SELECT @XmlData = CONVERT(XML,ï¿½BULKColumn)
 FROM OPENROWSET(BULK 'C:\Users\maike\Desktop\TP3\TP3-BD-main\Catalogos.xml', SINGLE_BLOB) AS x;
 
 
 EXEC sp_configure 'show advanced options', 1;
 RECONFIGURE;
-EXEC sp_configure 'Ad Hoc Distributed Queries', 1;
+EXEC sp_configure 'Ad Hoc Distributed Queries',ï¿½1;
 RECONFIGURE;
 
 
@@ -17,7 +17,7 @@ INSERT INTO TTCM (Nombre)
 SELECT 
     T.C.value('@Nombre', 'NVARCHAR(50)')
 FROM 
-    @XMLData.nodes('/root/TTCM/TTCM') AS T(C);
+    @XmlData.nodes('/root/TTCM/TTCM') AS T(C);
 
 -- Insertar datos en TRN
 INSERT INTO TRN (Nombre, Tipo)
@@ -25,7 +25,7 @@ SELECT
     T.C.value('@Nombre', 'NVARCHAR(50)'),
     T.C.value('@tipo', 'NVARCHAR(50)')
 FROM 
-    @XMLData.nodes('/root/TRN/TRN') AS T(C);
+    @XmlData.nodes('/root/TRN/TRN') AS T(C);
 
 -- Insertar datos en RN
 INSERT INTO RN (Nombre, idTTCM, idTRN, Valor)
@@ -35,7 +35,7 @@ SELECT
     TRN.id AS idTRN,
     T.C.value('@Valor', 'DECIMAL(18,2)') AS Valor
 FROM 
-    @XMLData.nodes('/root/RN/RN') AS T(C)
+    @XmlData.nodes('/root/RN/RN') AS T(C)
 JOIN 
     TTCM ON TTCM.Nombre = T.C.value('@TTCM', 'NVARCHAR(50)')
 JOIN 
@@ -46,7 +46,7 @@ INSERT INTO MIT (Nombre)
 SELECT 
     M.C.value('@Nombre', 'NVARCHAR(50)') AS Nombre
 FROM 
-    @XMLData.nodes('/root/MIT/MIT') AS M(C);
+    @XmlData.nodes('/root/MIT/MIT') AS M(C);
 
 -- Insertar datos en TM
 INSERT INTO TM (Nombre, Accion, Acumula_Operacion_ATM, Acumula_Operacion_Ventana)
@@ -56,7 +56,7 @@ INSERT INTO TM (Nombre, Accion, Acumula_Operacion_ATM, Acumula_Operacion_Ventana
         T.C.value('@Acumula_Operacion_ATM', 'NVARCHAR(2)'),
         T.C.value('@Acumula_Operacion_Ventana', 'NVARCHAR(2)')
     FROM 
-        @XMLData.nodes('/root/TM/TM') AS T(C); 
+        @XmlData.nodes('/root/TM/TM') AS T(C); 
 	
 -- Insetar datos en UA
 INSERT INTO UA (Nombre, Password)
