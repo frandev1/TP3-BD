@@ -25,7 +25,7 @@ INSERT INTO TCM (Codigo, idTTCM, LimiteCredito, idTH, Saldo)
 SELECT 
     T.C.value('@Codigo', 'VARCHAR(20)'),
     TTCM.id AS idTTCM, 
-    T.C.value('@LimiteCredito', 'DECIMAL(18,2)'),
+    T.C.value('@LimiteCredito', 'MONEY'),
     TH.id AS idTH,
 	0
 	
@@ -74,7 +74,7 @@ SELECT
     T.C.value('@Nombre', 'VARCHAR(50)'),
     TF.id AS idTF,
     T.C.value('@FechaMovimiento', 'DATE'),
-    T.C.value('@Monto', 'DECIMAL(18,2)'),
+    T.C.value('@Monto', 'MONEY'),
     T.C.value('@Descripcion', 'VARCHAR(100)'),
     T.C.value('@Referencia', 'VARCHAR(10)')
 FROM 
