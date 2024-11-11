@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios'
 
 function LoginForm() {  
@@ -7,7 +7,7 @@ function LoginForm() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const navigate = useNavigate();
 
   const handleLogin = async (event) => {
     event.preventDefault();
@@ -26,7 +26,11 @@ function LoginForm() {
       console.log(respuesta)
       if (respuesta.data.authenticated) {
         setMessage('Inicio de sesión exitoso');
-        setIsLoggedIn(true); // Cambia el estado de inicio de sesión
+        if (respuesta.data.tipoUsuario == 'UA'){
+          return navigate('/ua')
+        } else {
+          return navigate('th')
+        }
     } else {
         setMessage('Credenciales incorrectas');
     }
@@ -52,9 +56,6 @@ function LoginForm() {
     // }
   };
     return (
-        isLoggedIn ? (
-            <Navigate to="/bienvenida" replace />
-        ) : (
         <div className="login">
             <h1>Iniciar Sesión</h1>
             <form onSubmit={handleLogin}>
@@ -74,7 +75,6 @@ function LoginForm() {
             </form>
             <p>{message}</p>
         </div>
-        )
     );
   }
 

@@ -13,8 +13,19 @@ export const verificarUsuario = async (req, res) => {
             .output('OutResultCode', sql.Int, 0)
             .execute('sistemaTarjetaCredito.dbo.verificarUsuario');
 
+        console.log(result.output.OutTipoUsuario);
         if (result.output.OutResultCode === 0) {
-            res.json({ authenticated: true });
+            if (result.output.OutTipoUsuario == 0){
+                res.json({
+                    authenticated: true,
+                    tipoUsuario: 'UA'
+                });
+            } else {
+                res.json({
+                    authenticated: true,
+                    tipoUsuario: 'TH'
+                })
+            }
         } else {
             res.json({ authenticated: false });
         }

@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import './App.css';
-import LoginForm from './pages/LoginForm';
+import { LoginForm, UA, TH } from './pages/'
 
 function App() {
 
@@ -14,20 +14,15 @@ function App() {
           element={<LoginForm/>} 
         />
         <Route 
-          path="/bienvenida" 
-          element={<Bienvenida />} 
+          path="ua" 
+          element={<UA />} 
+        />
+        <Route
+          path='th'
+          element={<TH />}
         />
       </Routes>
     </BrowserRouter>
-  );
-}
-
-function Bienvenida() {
-  return (
-    <div>
-      <h1>Bienvenido al Sistema</h1>
-      <p>Has iniciado sesión exitosamente.</p>
-    </div>
   );
 }
 
