@@ -9,11 +9,11 @@ export const verificarUsuario = async (req, res) => {
         const result = await pool.request()
             .input('nombre', sql.VarChar, nombre)
             .input('password', sql.VarChar, password)
-            .execute('verificarUsuario');
+            .output('OutTipoUsuario', sql.VarChar, '')
+            .output('OutResultCode', sql.Int, 0)
+            .execute('sistemaTarjetaCredito.dbo.verificarUsuario');
 
-        const { Resultado } = result.recordset[0];
-
-        if (Resultado === 'Autenticado') {
+        if (result.output.OutResultCode === 0) {
             res.json({ authenticated: true });
         } else {
             res.json({ authenticated: false });
