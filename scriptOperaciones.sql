@@ -5,7 +5,7 @@ DECLARE @XmlData XML;
 
 -- Cargar el XML desde el archivo en la variable
 SELECT @XmlData = CONVERT(XML, BULKColumn)
-FROM OPENROWSET(BULK 'C:\TEC\BasesDatos1\TP3-BD\OperacionesFinal.xml', SINGLE_CLOB) AS x;
+FROM OPENROWSET(BULK 'C:\Users\maike\Desktop\TAREA PROGRAMADA 3\TP3-BD\OperacionesFinal.xml', SINGLE_CLOB) AS x;
 
 -- Insertar datos en la tabla TH
 INSERT INTO TH (Nombre, ValorDocIdentidad, FechaNacimiento, NombreUsuario, Password)
@@ -51,17 +51,30 @@ FROM
 
 SELECT * FROM TCA
 
--- Insertar datos en la tabla TF
-INSERT INTO TF (Codigo, idTCM, FechaVencimiento, CCV, EsActiva)
-SELECT 
-    T.C.value('@Codigo', 'VARCHAR(20)'),       -- Codigo de la tarjeta
-    TCA.id AS idTCM,                            -- idTCM obtenido a partir de TCA
-    CONVERT(DATE, '01/' + T.C.value('@FechaVencimiento', 'VARCHAR(10)'), 103), -- Formato de fecha
-    T.C.value('@CCV', 'VARCHAR(4)'),           -- CCV de la tarjeta
-    1                                           -- Tarjetas activas
+-- Inserta datos en la tabla TF (Codigo, idTCM, idTH, Numero, FechaVencimiento, CCV, EsActiva, FechaCreacion)
+INSERT INTO TF (Codigo, idTCM, idTH, Numero, FechaVencimiento, CCV, EsActiva, FechaCreacion)
+SELECT
+    T.C.value('@Codigo', 'VARCHAR(20)') AS Codigo,
+    TCM.id AS idTCM,
+    TH.id AS idTH,
+    T.C.value('@Codigo', 'VARCHAR(32)') AS Numero,
+    CONVERT(DATE, '01/' + T.C.value('@FechaVencimiento', 'VARCHAR(10)'), 103) AS FechaVencimiento,
+    T.C.value('@CCV', 'VARCHAR(4)') AS CCV,
+    1 AS EsActiva,
+    M.C.value('@FechaMovimiento', 'DATE') AS FechaCreacion -- Usa la FechaMovimiento del XML en lugar de GETDATE()
 FROM 
     @XmlData.nodes('/root/fechaOperacion/NTF/NTF') AS T(C)
-    JOIN TCA ON TCA.Codigo = T.C.value('@TCAsociada', 'VARCHAR(20)'); -- Join con TCA usando Codigo para obtener idTCM
+JOIN 
+    TCA ON TCA.Codigo = T.C.value('@TCAsociada', 'VARCHAR(20)')
+JOIN 
+    TCM ON TCM.id = TCA.idTCM
+JOIN 
+    TH ON TH.id = TCA.idTH
+JOIN 
+    @XmlData.nodes('/root/fechaOperacion/Movimiento/Movimiento') AS M(C)
+    ON M.C.value('@TF', 'VARCHAR(20)') = T.C.value('@Codigo', 'VARCHAR(20)');
+
+
 
 
 SELECT * FROM TF
@@ -80,4 +93,22 @@ SELECT
 FROM 
     @XmlData.nodes('/root/fechaOperacion/Movimiento/Movimiento') AS T(C)
     JOIN TF ON TF.Codigo = T.C.value('@TF', 'VARCHAR(20)'); -- Join con TCA usando Codigo para obtener idTF
-SELECT * FROM TF
+
+
+SELECT * FROM Movimiento
+
+
+
+-- Borrar todo el contenido de las tablas
+
+USE [sistemaEmpleadosTP2];
+GO
+
+-- Desactivar restricciones de claves foráneas
+EXEC sp_MSforeachtable 'ALTER TABLE ? NOCHECK CONSTRAINT ALL';
+
+-- Eliminar todos los registros de cada tabla
+EXEC sp_MSforeachtable 'DELETE FROM ?';
+
+-- Activar nuevamente las restricciones de claves foráneas
+EXEC sp_MSforeachtable 'ALTER TABLE ? WITH CHECK CHECK CONSTRAINT ALL';

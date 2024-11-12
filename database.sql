@@ -164,6 +164,7 @@ CREATE TABLE [dbo].[TF](
 	[FechaVencimiento] [date] NOT NULL,
 	[CCV] [varchar](32) NOT NULL,
 	[EsActiva] [bit] NOT NULL,
+	[FechaCreacion] [date] NOT NULL,
  CONSTRAINT [PK_TF] PRIMARY KEY CLUSTERED 
 (
 	[id] ASC

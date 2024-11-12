@@ -2,10 +2,10 @@ import sql from 'mssql';
 import config from '../src/config';
 
 const dbSetting = {
-    user: config.user,
-    password: config.password,
-    server: config.server,
-    database: config.database,
+    user: 'sistemaTarjetaCredito',
+    password: '1234',
+    server: 'localhost',
+    database: 'sistemaTarjetaCredito',
     authentication: {
         type: 'default' // o 'default' si ntlm no funciona
     },

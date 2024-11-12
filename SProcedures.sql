@@ -7,7 +7,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-ALTER PROCEDURE [dbo].[verificarUsuario] (
+CREATE PROCEDURE [dbo].[verificarUsuario] (
     @nombre VARCHAR(50),
     @password VARCHAR(50),
     @OutTipoUsuario INT OUTPUT,
@@ -36,7 +36,7 @@ BEGIN
             -- Verificar en la tabla de tarjetahabientes (TH)
             SELECT 1 
             FROM TH 
-            WHERE Nombre = @nombre 
+            WHERE NombreUsuario = @nombre 
             AND Password = @password
         )
         BEGIN
