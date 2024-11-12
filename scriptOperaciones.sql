@@ -7,6 +7,25 @@ DECLARE @XmlData XML;
 SELECT @XmlData = CONVERT(XML, BULKColumn)
 FROM OPENROWSET(BULK 'C:\Users\maike\Desktop\TAREA PROGRAMADA 3\TP3-BD\OperacionesFinal.xml', SINGLE_CLOB) AS x;
 
+
+-- Insertar datos en la tabla RP desde el XML
+INSERT INTO RP (idTF, Razon)
+SELECT 
+    TF.id AS idTF,                -- id de la Tarjeta Física
+    R.C.value('@Razon', 'VARCHAR(20)') -- Razón de la renovación (Robo o Pérdida)
+FROM 
+    @XmlData.nodes('/root/fechaOperacion/RenovacionRoboPerdida/RRP') AS R(C)
+JOIN 
+    TF ON TF.Numero = R.C.value('@TF', 'VARCHAR(20)'); -- Vincular con TF usando el número de tarjeta
+
+-- Verificar que los datos se hayan insertado correctamente
+SELECT * FROM RP;
+
+
+SELECT * FROM TF
+SELECT * FROM RP
+
+
 -- Insertar datos en la tabla TH
 INSERT INTO TH (Nombre, ValorDocIdentidad, FechaNacimiento, NombreUsuario, Password)
 SELECT 
