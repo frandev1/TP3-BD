@@ -5,26 +5,7 @@ DECLARE @XmlData XML;
 
 -- Cargar el XML desde el archivo en la variable
 SELECT @XmlData = CONVERT(XML, BULKColumn)
-FROM OPENROWSET(BULK 'C:\Users\maike\Desktop\TAREA PROGRAMADA 3\TP3-BD\OperacionesFinal.xml', SINGLE_CLOB) AS x;
-
-
--- Insertar datos en la tabla RP desde el XML
-INSERT INTO RP (idTF, Razon)
-SELECT 
-    TF.id AS idTF,                -- id de la Tarjeta Física
-    R.C.value('@Razon', 'VARCHAR(20)') -- Razón de la renovación (Robo o Pérdida)
-FROM 
-    @XmlData.nodes('/root/fechaOperacion/RenovacionRoboPerdida/RRP') AS R(C)
-JOIN 
-    TF ON TF.Numero = R.C.value('@TF', 'VARCHAR(20)'); -- Vincular con TF usando el número de tarjeta
-
--- Verificar que los datos se hayan insertado correctamente
-SELECT * FROM RP;
-
-
-SELECT * FROM TF
-SELECT * FROM RP
-
+FROM OPENROWSET(BULK 'C:\TEC\BasesDatos1\TP3-BD\OperacionesFinal.xml', SINGLE_CLOB) AS x;
 
 -- Insertar datos en la tabla TH
 INSERT INTO TH (Nombre, ValorDocIdentidad, FechaNacimiento, NombreUsuario, Password)
@@ -98,7 +79,18 @@ JOIN
 
 SELECT * FROM TF
 
+-- Insertar datos en la tabla RP desde el XML
+INSERT INTO RP (idTF, Razon)
+SELECT 
+    TF.id AS idTF,                -- id de la Tarjeta Fï¿½sica
+    R.C.value('@Razon', 'VARCHAR(20)') -- Razï¿½n de la renovaciï¿½n (Robo o Pï¿½rdida)
+FROM 
+    @XmlData.nodes('/root/fechaOperacion/RenovacionRoboPerdida/RRP') AS R(C)
+JOIN 
+    TF ON TF.Numero = R.C.value('@TF', 'VARCHAR(20)'); -- Vincular con TF usando el nï¿½mero de tarjeta
 
+-- Verificar que los datos se hayan insertado correctamente
+SELECT * FROM RP;
 
 -- Insertar datos en la tabla Movimiento
 INSERT INTO Movimiento (Nombre, idTF, FechaMovimiento, Monto, Descripcion, Referencia)
@@ -123,11 +115,11 @@ SELECT * FROM Movimiento
 USE [sistemaEmpleadosTP2];
 GO
 
--- Desactivar restricciones de claves foráneas
+-- Desactivar restricciones de claves forï¿½neas
 EXEC sp_MSforeachtable 'ALTER TABLE ? NOCHECK CONSTRAINT ALL';
 
 -- Eliminar todos los registros de cada tabla
 EXEC sp_MSforeachtable 'DELETE FROM ?';
 
--- Activar nuevamente las restricciones de claves foráneas
+-- Activar nuevamente las restricciones de claves forï¿½neas
 EXEC sp_MSforeachtable 'ALTER TABLE ? WITH CHECK CHECK CONSTRAINT ALL';

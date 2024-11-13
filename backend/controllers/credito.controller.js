@@ -7,12 +7,13 @@ export const verificarUsuario = async (req, res) => {
     try {
         const pool = await getConnection();
         const result = await pool.request()
-            .input('nombre', sql.VarChar, nombre)
-            .input('password', sql.VarChar, password)
-            .output('OutTipoUsuario', sql.VarChar, '')
+            .input('inNombre', sql.VarChar, nombre)
+            .input('inPassword', sql.VarChar, password)
+            .output('OutTipoUsuario', sql.VarChar, null)
             .output('OutResultCode', sql.Int, 0)
             .execute('sistemaTarjetaCredito.dbo.verificarUsuario');
 
+        console.log(result.output.OutResultCode)
         console.log(result.output.OutTipoUsuario);
         if (result.output.OutResultCode === 0) {
             if (result.output.OutTipoUsuario == 0){
@@ -34,3 +35,25 @@ export const verificarUsuario = async (req, res) => {
         res.status(500).json({ error: 'Error en el servidor' });
     }
 };
+
+export const tarjetasTH = async (req, res) => {
+    const {usuarioTH} = req.body;
+    console.log(usuarioTH);
+    try{
+        const pool = await getConnection();
+        const result = await pool.request()
+        .input('inUsuarioTH', sql.VarChar, usuarioTH)
+        .output('OutResultCode', sql.Int, 0)
+        .execute('sistemaTarjetaCredito.dbo.ObtenerTarjetasAsociadasTH')
+
+        console.log(result);
+        if (result.output.OutResultCode === 0){
+            res.status(200).json(result)
+        } else{
+            res.status(400).json({msg: 'Error al obtener las tarjetas de crédito'})
+        }
+    } catch(error) {
+        console.error('Error al obtener empleados:', error);
+        res.status(500).json({ error: 'Error en el servidor' });
+    }
+}
