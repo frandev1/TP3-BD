@@ -3,7 +3,7 @@ GO
 
 DECLARE @XmlData XML;
 SELECT @XmlData = CONVERT(XML,BULKColumn)
-FROM OPENROWSET(BULK 'C:\Users\maike\Desktop\TAREA PROGRAMADA 3\TP3-BD\CatalogosFinal.xml', SINGLE_CLOB) AS x;
+FROM OPENROWSET(BULK 'C:\TEC\BasesDatos1\TP3-BD\CatalogosFinal.xml', SINGLE_CLOB) AS x;
 
 -- Insertar datos en TTCM
 INSERT INTO TTCM (Nombre)
@@ -75,10 +75,8 @@ INSERT INTO TMIM (Nombre)
 		@XmlData.nodes('/root/TMIM/TMIM') AS T(C);
 
 -- Borrar todo el contenido de las tablas
-
-USE [sistemaEmpleadosTP2];
-GO
-
+USE [sistemaTarjetaCredito]
+GO;
 -- Desactivar restricciones de claves foráneas
 EXEC sp_MSforeachtable 'ALTER TABLE ? NOCHECK CONSTRAINT ALL';
 

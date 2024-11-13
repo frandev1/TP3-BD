@@ -82,9 +82,12 @@ ALTER DATABASE [sistemaTarjetaCredito] SET QUERY_STORE (OPERATION_MODE = READ_WR
 GO
 USE [sistemaTarjetaCredito]
 GO
+<<<<<<< HEAD
 /****** Object:  User [MJCM]    Script Date: 12/11/2024 21:55:52 ******/
 CREATE USER [MJCM] FOR LOGIN [MJCM] WITH DEFAULT_SCHEMA=[dbo]
 GO
+=======
+>>>>>>> 1280351979e97c3076ebc71762e0c49f1451ffda
 /****** Object:  Table [dbo].[DBError]    Script Date: 12/11/2024 21:55:52 ******/
 SET ANSI_NULLS ON
 GO
