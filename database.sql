@@ -1,94 +1,11 @@
 USE [master]
 GO
-/****** Object:  Database [sistemaTarjetaCredito]    Script Date: 12/11/2024 21:55:52 ******/
+/****** Object:  Database [sistemaTarjetaCredito]    Script Date: 13/11/2024 16:28:14 ******/
 CREATE DATABASE [sistemaTarjetaCredito]
- CONTAINMENT = NONE
- ON  PRIMARY 
-( NAME = N'sistemaTarjetaCredito', FILENAME = N'C:\Program Files\Microsoft SQL Server\MSSQL16.SQLEXPRESS\MSSQL\DATA\sistemaTarjetaCredito.mdf' , SIZE = 204800KB , MAXSIZE = UNLIMITED, FILEGROWTH = 65536KB )
- LOG ON 
-( NAME = N'sistemaTarjetaCredito_log', FILENAME = N'C:\Program Files\Microsoft SQL Server\MSSQL16.SQLEXPRESS\MSSQL\DATA\sistemaTarjetaCredito_log.ldf' , SIZE = 401408KB , MAXSIZE = 2048GB , FILEGROWTH = 65536KB )
- WITH CATALOG_COLLATION = DATABASE_DEFAULT, LEDGER = OFF
-GO
-ALTER DATABASE [sistemaTarjetaCredito] SET COMPATIBILITY_LEVEL = 160
-GO
-IF (1 = FULLTEXTSERVICEPROPERTY('IsFullTextInstalled'))
-begin
-EXEC [sistemaTarjetaCredito].[dbo].[sp_fulltext_database] @action = 'enable'
-end
-GO
-ALTER DATABASE [sistemaTarjetaCredito] SET ANSI_NULL_DEFAULT OFF 
-GO
-ALTER DATABASE [sistemaTarjetaCredito] SET ANSI_NULLS OFF 
-GO
-ALTER DATABASE [sistemaTarjetaCredito] SET ANSI_PADDING OFF 
-GO
-ALTER DATABASE [sistemaTarjetaCredito] SET ANSI_WARNINGS OFF 
-GO
-ALTER DATABASE [sistemaTarjetaCredito] SET ARITHABORT OFF 
-GO
-ALTER DATABASE [sistemaTarjetaCredito] SET AUTO_CLOSE ON 
-GO
-ALTER DATABASE [sistemaTarjetaCredito] SET AUTO_SHRINK OFF 
-GO
-ALTER DATABASE [sistemaTarjetaCredito] SET AUTO_UPDATE_STATISTICS ON 
-GO
-ALTER DATABASE [sistemaTarjetaCredito] SET CURSOR_CLOSE_ON_COMMIT OFF 
-GO
-ALTER DATABASE [sistemaTarjetaCredito] SET CURSOR_DEFAULT  GLOBAL 
-GO
-ALTER DATABASE [sistemaTarjetaCredito] SET CONCAT_NULL_YIELDS_NULL OFF 
-GO
-ALTER DATABASE [sistemaTarjetaCredito] SET NUMERIC_ROUNDABORT OFF 
-GO
-ALTER DATABASE [sistemaTarjetaCredito] SET QUOTED_IDENTIFIER OFF 
-GO
-ALTER DATABASE [sistemaTarjetaCredito] SET RECURSIVE_TRIGGERS OFF 
-GO
-ALTER DATABASE [sistemaTarjetaCredito] SET  ENABLE_BROKER 
-GO
-ALTER DATABASE [sistemaTarjetaCredito] SET AUTO_UPDATE_STATISTICS_ASYNC OFF 
-GO
-ALTER DATABASE [sistemaTarjetaCredito] SET DATE_CORRELATION_OPTIMIZATION OFF 
-GO
-ALTER DATABASE [sistemaTarjetaCredito] SET TRUSTWORTHY OFF 
-GO
-ALTER DATABASE [sistemaTarjetaCredito] SET ALLOW_SNAPSHOT_ISOLATION OFF 
-GO
-ALTER DATABASE [sistemaTarjetaCredito] SET PARAMETERIZATION SIMPLE 
-GO
-ALTER DATABASE [sistemaTarjetaCredito] SET READ_COMMITTED_SNAPSHOT OFF 
-GO
-ALTER DATABASE [sistemaTarjetaCredito] SET HONOR_BROKER_PRIORITY OFF 
-GO
-ALTER DATABASE [sistemaTarjetaCredito] SET RECOVERY SIMPLE 
-GO
-ALTER DATABASE [sistemaTarjetaCredito] SET  MULTI_USER 
-GO
-ALTER DATABASE [sistemaTarjetaCredito] SET PAGE_VERIFY CHECKSUM  
-GO
-ALTER DATABASE [sistemaTarjetaCredito] SET DB_CHAINING OFF 
-GO
-ALTER DATABASE [sistemaTarjetaCredito] SET FILESTREAM( NON_TRANSACTED_ACCESS = OFF ) 
-GO
-ALTER DATABASE [sistemaTarjetaCredito] SET TARGET_RECOVERY_TIME = 60 SECONDS 
-GO
-ALTER DATABASE [sistemaTarjetaCredito] SET DELAYED_DURABILITY = DISABLED 
-GO
-ALTER DATABASE [sistemaTarjetaCredito] SET ACCELERATED_DATABASE_RECOVERY = OFF  
-GO
-ALTER DATABASE [sistemaTarjetaCredito] SET QUERY_STORE = ON
-GO
-ALTER DATABASE [sistemaTarjetaCredito] SET QUERY_STORE (OPERATION_MODE = READ_WRITE, CLEANUP_POLICY = (STALE_QUERY_THRESHOLD_DAYS = 30), DATA_FLUSH_INTERVAL_SECONDS = 900, INTERVAL_LENGTH_MINUTES = 60, MAX_STORAGE_SIZE_MB = 1000, QUERY_CAPTURE_MODE = AUTO, SIZE_BASED_CLEANUP_MODE = AUTO, MAX_PLANS_PER_QUERY = 200, WAIT_STATS_CAPTURE_MODE = ON)
 GO
 USE [sistemaTarjetaCredito]
 GO
-<<<<<<< HEAD
-/****** Object:  User [MJCM]    Script Date: 12/11/2024 21:55:52 ******/
-CREATE USER [MJCM] FOR LOGIN [MJCM] WITH DEFAULT_SCHEMA=[dbo]
-GO
-=======
->>>>>>> 1280351979e97c3076ebc71762e0c49f1451ffda
-/****** Object:  Table [dbo].[DBError]    Script Date: 12/11/2024 21:55:52 ******/
+/****** Object:  Table [dbo].[DBError]    Script Date: 13/11/2024 16:28:15 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -109,7 +26,7 @@ CREATE TABLE [dbo].[DBError](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[MIT]    Script Date: 12/11/2024 21:55:52 ******/
+/****** Object:  Table [dbo].[MIT]    Script Date: 13/11/2024 16:28:15 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -123,7 +40,7 @@ CREATE TABLE [dbo].[MIT](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[Movimiento]    Script Date: 12/11/2024 21:55:52 ******/
+/****** Object:  Table [dbo].[Movimiento]    Script Date: 13/11/2024 16:28:15 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -142,7 +59,7 @@ CREATE TABLE [dbo].[Movimiento](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[MovimientoPorInteresCorriente]    Script Date: 12/11/2024 21:55:52 ******/
+/****** Object:  Table [dbo].[MovimientoPorInteresCorriente]    Script Date: 13/11/2024 16:28:15 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -155,7 +72,7 @@ CREATE TABLE [dbo].[MovimientoPorInteresCorriente](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[MovimientoPorInteresMoratorio]    Script Date: 12/11/2024 21:55:52 ******/
+/****** Object:  Table [dbo].[MovimientoPorInteresMoratorio]    Script Date: 13/11/2024 16:28:15 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -168,7 +85,7 @@ CREATE TABLE [dbo].[MovimientoPorInteresMoratorio](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[MovimientoSospechoso]    Script Date: 12/11/2024 21:55:52 ******/
+/****** Object:  Table [dbo].[MovimientoSospechoso]    Script Date: 13/11/2024 16:28:15 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -181,7 +98,7 @@ CREATE TABLE [dbo].[MovimientoSospechoso](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[RN]    Script Date: 12/11/2024 21:55:52 ******/
+/****** Object:  Table [dbo].[RN]    Script Date: 13/11/2024 16:28:15 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -198,7 +115,7 @@ CREATE TABLE [dbo].[RN](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[RP]    Script Date: 12/11/2024 21:55:52 ******/
+/****** Object:  Table [dbo].[RP]    Script Date: 13/11/2024 16:28:15 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -213,7 +130,7 @@ CREATE TABLE [dbo].[RP](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[TCA]    Script Date: 12/11/2024 21:55:52 ******/
+/****** Object:  Table [dbo].[TCA]    Script Date: 13/11/2024 16:28:15 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -229,7 +146,7 @@ CREATE TABLE [dbo].[TCA](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[TCM]    Script Date: 12/11/2024 21:55:52 ******/
+/****** Object:  Table [dbo].[TCM]    Script Date: 13/11/2024 16:28:15 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -247,7 +164,7 @@ CREATE TABLE [dbo].[TCM](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[TF]    Script Date: 12/11/2024 21:55:52 ******/
+/****** Object:  Table [dbo].[TF]    Script Date: 13/11/2024 16:28:15 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -268,7 +185,7 @@ CREATE TABLE [dbo].[TF](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[TH]    Script Date: 12/11/2024 21:55:52 ******/
+/****** Object:  Table [dbo].[TH]    Script Date: 13/11/2024 16:28:15 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -286,7 +203,7 @@ CREATE TABLE [dbo].[TH](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[TM]    Script Date: 12/11/2024 21:55:52 ******/
+/****** Object:  Table [dbo].[TM]    Script Date: 13/11/2024 16:28:15 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -303,7 +220,7 @@ CREATE TABLE [dbo].[TM](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[TMIC]    Script Date: 12/11/2024 21:55:52 ******/
+/****** Object:  Table [dbo].[TMIC]    Script Date: 13/11/2024 16:28:15 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -317,7 +234,7 @@ CREATE TABLE [dbo].[TMIC](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[TMIM]    Script Date: 12/11/2024 21:55:52 ******/
+/****** Object:  Table [dbo].[TMIM]    Script Date: 13/11/2024 16:28:15 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -331,7 +248,7 @@ CREATE TABLE [dbo].[TMIM](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[TRN]    Script Date: 12/11/2024 21:55:52 ******/
+/****** Object:  Table [dbo].[TRN]    Script Date: 13/11/2024 16:28:15 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -346,7 +263,7 @@ CREATE TABLE [dbo].[TRN](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[TTCM]    Script Date: 12/11/2024 21:55:52 ******/
+/****** Object:  Table [dbo].[TTCM]    Script Date: 13/11/2024 16:28:15 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -360,7 +277,7 @@ CREATE TABLE [dbo].[TTCM](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[UA]    Script Date: 12/11/2024 21:55:52 ******/
+/****** Object:  Table [dbo].[UA]    Script Date: 13/11/2024 16:28:15 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -440,15 +357,196 @@ REFERENCES [dbo].[TH] ([id])
 GO
 ALTER TABLE [dbo].[TF] CHECK CONSTRAINT [FK_TF_TH]
 GO
-/****** Object:  StoredProcedure [dbo].[verificarUsuario]    Script Date: 12/11/2024 21:55:52 ******/
+/****** Object:  StoredProcedure [dbo].[ObtenerTarjetasAsociadasTH]    Script Date: 13/11/2024 16:28:15 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+CREATE PROCEDURE [dbo].[ObtenerTarjetasAsociadasTH]
+    @inUsuarioTH VARCHAR(32),  -- Nombre de usuario de la TH
+    @OutResultCode INT OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
 
+    BEGIN TRY
+        -- Se inicializa la variable de salida
+        SET @OutResultCode = 0;
+
+        DECLARE @idTH INT;
+
+        -- Obtener el id del tarjetahabiente
+        SELECT @idTH = id
+        FROM [sistemaTarjetaCredito].[dbo].[TH]
+        WHERE NombreUsuario = @inUsuarioTH;
+
+        -- Verificar que el id se obtuvo correctamente
+        IF @idTH IS NULL
+        BEGIN
+            SET @OutResultCode = 50002;  -- Código de error para usuario no encontrado
+            RAISERROR('Usuario no encontrado.', 16, 1);
+            RETURN;
+        END
+
+        BEGIN TRANSACTION
+
+        -- Seleccionar las tarjetas asociadas al tarjetahabiente con el tipo de cuenta
+        SELECT DISTINCT
+            TF.Numero AS NumeroTarjeta,
+            CASE
+                WHEN TF.EsActiva = 1 THEN 'Activa'
+                WHEN TF.EsActiva = 0 THEN 'Inactiva'
+            END AS EstadoCuenta,
+            TF.FechaVencimiento,
+            CASE 
+                WHEN TCA.id IS NOT NULL THEN 'TCA'
+                WHEN TCM.id IS NOT NULL THEN 'TCM'
+                ELSE NULL
+            END AS TipoCuenta
+        FROM 
+            [sistemaTarjetaCredito].[dbo].[TF] TF
+        LEFT JOIN TCA ON TF.idTCM = TCA.id  -- Relación con TCA
+        LEFT JOIN TCM ON TF.idTCM = TCM.id  -- Relación con TCM
+        INNER JOIN TH ON TH.id = TF.idTH
+        WHERE 
+            TH.id = @idTH  -- Solo tarjetas asociadas al Tarjetahabiente
+        ORDER BY 
+            TF.FechaVencimiento DESC;  -- Orden descendente por fecha de vencimiento
+
+        COMMIT TRANSACTION
+        
+    END TRY
+    BEGIN CATCH
+        -- Rollback en caso de error
+        IF @@TRANCOUNT > 0 
+        BEGIN
+            ROLLBACK TRANSACTION;
+        END;
+        
+        -- Asignar el código de error de la base de datos al resultado de salida
+        SET @OutResultCode = ERROR_NUMBER();
+
+        -- Registrar el error en la tabla DBError
+        INSERT INTO [sistemaTarjetaCredito].[dbo].[DBError]
+        (
+            ErrorUsername,
+            ErrorNumber,
+            ErrorState,
+            ErrorSeverity,
+            ErrorLine,
+            ErrorProcedure,
+            ErrorMessage,
+            ErrorDateTime
+        )
+        VALUES
+        (
+            SUSER_NAME(),
+            ERROR_NUMBER(),
+            ERROR_STATE(),
+            ERROR_SEVERITY(),
+            ERROR_LINE(),
+            ERROR_PROCEDURE(),
+            ERROR_MESSAGE(),
+            GETDATE()
+        );
+
+        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
+        RAISERROR(@ErrorMessage, 16, 1);
+    END CATCH
+
+    SET NOCOUNT OFF;
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[ObtenerTodasLasTarjetas]    Script Date: 13/11/2024 16:28:15 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[ObtenerTodasLasTarjetas]
+    @NombreUsuario VARCHAR(50),
+    @OutResultCode INT OUTPUT  
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    BEGIN TRY
+        -- ES ADMIN
+        IF EXISTS (
+            SELECT 1
+            FROM UA
+            WHERE Nombre = @NombreUsuario
+        )
+        BEGIN
+            -- TCM TCA UNION CON TF
+            SELECT DISTINCT
+                'TCM' AS TipoTarjeta,
+                TCM.Codigo,
+                TF.Numero,
+                TH.Nombre AS NombreTarjetahabiente
+            FROM TCM
+            INNER JOIN TF ON TCM.id = TF.idTCM  
+            INNER JOIN TH ON TCM.idTH = TH.id
+
+            UNION ALL
+
+            SELECT DISTINCT
+                'TCA' AS TipoTarjeta,
+                TCA.Codigo,
+                TF.Numero,
+                TH.Nombre AS NombreTarjetahabiente
+            FROM TCA
+            INNER JOIN TF ON TCA.id = TF.idTCM  
+            INNER JOIN TH ON TCA.idTH = TH.id;
+
+            SET @OutResultCode = 0;  -- CORONO
+        END
+        ELSE
+        BEGIN
+            -- NO ADMIN
+            SET @OutResultCode = 50001;  
+            RAISERROR('Usuario no autorizado.', 16, 1);
+        END
+    END TRY
+    BEGIN CATCH
+        -- ERRORES
+        SET @OutResultCode = ERROR_NUMBER();
+
+        -- DBERROR
+        INSERT INTO [dbo].[DBError] (
+            ErrorUserName,
+            ErrorNumber,
+            ErrorState,
+            ErrorSeverity,
+            ErrorLine,
+            ErrorProcedure,
+            ErrorMessage,
+            ErrorDateTime
+        )
+        VALUES (
+            SUSER_NAME(),
+            ERROR_NUMBER(),
+            ERROR_STATE(),
+            ERROR_SEVERITY(),
+            ERROR_LINE(),
+            ERROR_PROCEDURE(),
+            ERROR_MESSAGE(),
+            GETDATE()
+        );
+
+        
+        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
+        RAISERROR(@ErrorMessage, 16, 1);
+    END CATCH
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[verificarUsuario]    Script Date: 13/11/2024 16:28:15 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
 CREATE PROCEDURE [dbo].[verificarUsuario] (
-    @nombre VARCHAR(50),
-    @password VARCHAR(50),
+    @inNombre VARCHAR(50),
+    @inPassword VARCHAR(50),
     @OutTipoUsuario INT OUTPUT,
     @OutResultCode INT OUTPUT
 )
@@ -463,9 +561,9 @@ BEGIN
         -- Verificar en la tabla de usuarios administrativos (UA)
         IF EXISTS (
             SELECT 1 
-            FROM UA 
-            WHERE Nombre = @nombre 
-            AND Password = @password
+            FROM [sistemaTarjetaCredito].[dbo].[UA] UA 
+            WHERE UA.Nombre = @inNombre 
+            AND UA.Password = @inPassword
         )
         BEGIN
             -- Autenticación exitosa como usuario adiministrativo (UA)
@@ -474,9 +572,9 @@ BEGIN
         ELSE IF EXISTS (
             -- Verificar en la tabla de tarjetahabientes (TH)
             SELECT 1 
-            FROM TH 
-            WHERE NombreUsuario = @nombre 
-            AND Password = @password
+            FROM [sistemaTarjetaCredito].[dbo].[TH] TH 
+            WHERE TH.NombreUsuario = @inNombre 
+            AND TH.Password = @inPassword
         )
         BEGIN
             -- Autenticación exitosa como tarjetahabiente (TH)
