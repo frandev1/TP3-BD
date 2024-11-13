@@ -26,3 +26,15 @@ export async function getConnection() {
         return null;
     }
 }
+
+// Maikel
+DBname = 'sistemaTarjetaCredito'
+DBuser = 'sistemaTarjetaCredito'
+DBpassword = '1234'
+DBserver = 'localhost'
+
+// Franco
+DBname = 'sistemaTarjetaCredito'
+DBuser = 'user1'
+DBpassword = '1234'
+DBserver = 'localhost'

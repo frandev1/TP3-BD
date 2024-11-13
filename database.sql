@@ -30,15 +30,7 @@ GO
 
 
 
--- TABLA RP
-CREATE TABLE [dbo].[RP] (
-    [id] INT IDENTITY(1,1) NOT NULL,
-    [idTF] INT NOT NULL, -- ID de la Tarjeta Física
-    [Razon] VARCHAR(20) NOT NULL, -- Razón de la renovación (Robo o Pérdida)
-    CONSTRAINT [PK_RP] PRIMARY KEY CLUSTERED ([id] ASC),
-    CONSTRAINT [FK_RP_TF] FOREIGN KEY ([idTF]) REFERENCES [dbo].[TF] ([id])
-) ON [PRIMARY];
-GO
+
 
 
 
@@ -359,6 +351,16 @@ ALTER TABLE [dbo].[TF]  WITH CHECK ADD  CONSTRAINT [FK_TF_TH] FOREIGN KEY([idTH]
 REFERENCES [dbo].[TH] ([id])
 GO
 ALTER TABLE [dbo].[TF] CHECK CONSTRAINT [FK_TF_TH]
+GO
+
+-- TABLA RP
+CREATE TABLE [dbo].[RP] (
+    [id] INT IDENTITY(1,1) NOT NULL,
+    [idTF] INT NOT NULL, -- ID de la Tarjeta Física
+    [Razon] VARCHAR(20) NOT NULL, -- Razón de la renovación (Robo o Pérdida)
+    CONSTRAINT [PK_RP] PRIMARY KEY CLUSTERED ([id] ASC),
+    CONSTRAINT [FK_RP_TF] FOREIGN KEY ([idTF]) REFERENCES [dbo].[TF] ([id])
+) ON [PRIMARY];
 GO
 
 USE [master]
