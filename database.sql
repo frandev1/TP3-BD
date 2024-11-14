@@ -1,11 +1,88 @@
 USE [master]
 GO
-/****** Object:  Database [sistemaTarjetaCredito]    Script Date: 13/11/2024 18:17:01 ******/
+/****** Object:  Database [sistemaTarjetaCredito]    Script Date: 14/11/2024 05:12:11 ******/
 CREATE DATABASE [sistemaTarjetaCredito]
+ CONTAINMENT = NONE
+ ON  PRIMARY 
+( NAME = N'sistemaTarjetaCredito', FILENAME = N'C:\Program Files\Microsoft SQL Server\MSSQL15.MSSQLSERVER\MSSQL\DATA\sistemaTarjetaCredito.mdf' , SIZE = 73728KB , MAXSIZE = UNLIMITED, FILEGROWTH = 65536KB )
+ LOG ON 
+( NAME = N'sistemaTarjetaCredito_log', FILENAME = N'C:\Program Files\Microsoft SQL Server\MSSQL15.MSSQLSERVER\MSSQL\DATA\sistemaTarjetaCredito_log.ldf' , SIZE = 73728KB , MAXSIZE = 2048GB , FILEGROWTH = 65536KB )
+ WITH CATALOG_COLLATION = DATABASE_DEFAULT
+GO
+ALTER DATABASE [sistemaTarjetaCredito] SET COMPATIBILITY_LEVEL = 150
+GO
+IF (1 = FULLTEXTSERVICEPROPERTY('IsFullTextInstalled'))
+begin
+EXEC [sistemaTarjetaCredito].[dbo].[sp_fulltext_database] @action = 'enable'
+end
+GO
+ALTER DATABASE [sistemaTarjetaCredito] SET ANSI_NULL_DEFAULT OFF 
+GO
+ALTER DATABASE [sistemaTarjetaCredito] SET ANSI_NULLS OFF 
+GO
+ALTER DATABASE [sistemaTarjetaCredito] SET ANSI_PADDING OFF 
+GO
+ALTER DATABASE [sistemaTarjetaCredito] SET ANSI_WARNINGS OFF 
+GO
+ALTER DATABASE [sistemaTarjetaCredito] SET ARITHABORT OFF 
+GO
+ALTER DATABASE [sistemaTarjetaCredito] SET AUTO_CLOSE OFF 
+GO
+ALTER DATABASE [sistemaTarjetaCredito] SET AUTO_SHRINK OFF 
+GO
+ALTER DATABASE [sistemaTarjetaCredito] SET AUTO_UPDATE_STATISTICS ON 
+GO
+ALTER DATABASE [sistemaTarjetaCredito] SET CURSOR_CLOSE_ON_COMMIT OFF 
+GO
+ALTER DATABASE [sistemaTarjetaCredito] SET CURSOR_DEFAULT  GLOBAL 
+GO
+ALTER DATABASE [sistemaTarjetaCredito] SET CONCAT_NULL_YIELDS_NULL OFF 
+GO
+ALTER DATABASE [sistemaTarjetaCredito] SET NUMERIC_ROUNDABORT OFF 
+GO
+ALTER DATABASE [sistemaTarjetaCredito] SET QUOTED_IDENTIFIER OFF 
+GO
+ALTER DATABASE [sistemaTarjetaCredito] SET RECURSIVE_TRIGGERS OFF 
+GO
+ALTER DATABASE [sistemaTarjetaCredito] SET  ENABLE_BROKER 
+GO
+ALTER DATABASE [sistemaTarjetaCredito] SET AUTO_UPDATE_STATISTICS_ASYNC OFF 
+GO
+ALTER DATABASE [sistemaTarjetaCredito] SET DATE_CORRELATION_OPTIMIZATION OFF 
+GO
+ALTER DATABASE [sistemaTarjetaCredito] SET TRUSTWORTHY OFF 
+GO
+ALTER DATABASE [sistemaTarjetaCredito] SET ALLOW_SNAPSHOT_ISOLATION OFF 
+GO
+ALTER DATABASE [sistemaTarjetaCredito] SET PARAMETERIZATION SIMPLE 
+GO
+ALTER DATABASE [sistemaTarjetaCredito] SET READ_COMMITTED_SNAPSHOT OFF 
+GO
+ALTER DATABASE [sistemaTarjetaCredito] SET HONOR_BROKER_PRIORITY OFF 
+GO
+ALTER DATABASE [sistemaTarjetaCredito] SET RECOVERY FULL 
+GO
+ALTER DATABASE [sistemaTarjetaCredito] SET  MULTI_USER 
+GO
+ALTER DATABASE [sistemaTarjetaCredito] SET PAGE_VERIFY CHECKSUM  
+GO
+ALTER DATABASE [sistemaTarjetaCredito] SET DB_CHAINING OFF 
+GO
+ALTER DATABASE [sistemaTarjetaCredito] SET FILESTREAM( NON_TRANSACTED_ACCESS = OFF ) 
+GO
+ALTER DATABASE [sistemaTarjetaCredito] SET TARGET_RECOVERY_TIME = 60 SECONDS 
+GO
+ALTER DATABASE [sistemaTarjetaCredito] SET DELAYED_DURABILITY = DISABLED 
+GO
+ALTER DATABASE [sistemaTarjetaCredito] SET ACCELERATED_DATABASE_RECOVERY = OFF  
+GO
+EXEC sys.sp_db_vardecimal_storage_format N'sistemaTarjetaCredito', N'ON'
+GO
+ALTER DATABASE [sistemaTarjetaCredito] SET QUERY_STORE = OFF
 GO
 USE [sistemaTarjetaCredito]
 GO
-/****** Object:  Table [dbo].[EstadoCuenta]    Script Date: 13/11/2024 18:17:01 ******/
+/****** Object:  Table [dbo].[EstadoCuenta]    Script Date: 14/11/2024 05:12:11 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -14,54 +91,54 @@ CREATE TABLE [dbo].[EstadoCuenta](
 	[id] [int] IDENTITY(1,1) NOT NULL,
 	[idTCM] [int] NOT NULL,
 	[FechaCorte] [date] NOT NULL,
-	[SaldoActual] [decimal](10, 2) NOT NULL,
-	[PagoContratado] [decimal](10, 2) NOT NULL,
-	[PagoMinimo] [decimal](10, 2) NOT NULL,
+	[SaldoActual] [money] NOT NULL,
+	[PagoContratado] [money] NOT NULL,
+	[PagoMinimo] [money] NOT NULL,
 	[FechaPago] [date] NOT NULL,
-	[InteresesCorrientes] [decimal](10, 2) NOT NULL,
-	[InteresesMoratorios] [decimal](10, 2) NOT NULL,
+	[InteresesCorrientes] [money] NOT NULL,
+	[InteresesMoratorios] [money] NOT NULL,
 	[CantidadOperaciones] [int] NOT NULL,
 	[CantidadOperacionesMes] [int] NOT NULL,
-	[SumaPagosAntesFecha] [decimal](10, 2) NOT NULL,
-	[SumaPagosMes] [decimal](10, 2) NOT NULL,
+	[SumaPagosAntesFecha] [money] NOT NULL,
+	[SumaPagosMes] [money] NOT NULL,
 	[CantidadPagosMes] [int] NOT NULL,
 	[CantidadCompras] [int] NOT NULL,
 	[CantidadRetiros] [int] NOT NULL,
-	[SumaCompras] [decimal](10, 2) NOT NULL,
-	[SumaRetiros] [decimal](10, 2) NOT NULL,
+	[SumaCompras] [money] NOT NULL,
+	[SumaRetiros] [money] NOT NULL,
 	[CantidadCreditos] [int] NOT NULL,
-	[SumaCreditos] [decimal](10, 2) NOT NULL,
+	[SumaCreditos] [money] NOT NULL,
 	[CantidadDebitos] [int] NOT NULL,
-	[SumaDebitos] [decimal](10, 2) NOT NULL,
+	[SumaDebitos] [money] NOT NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[MotivoInvalidadacionTarjeta]    Script Date: 13/11/2024 18:17:01 ******/
+/****** Object:  Table [dbo].[MIT]    Script Date: 14/11/2024 05:12:11 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE TABLE [dbo].[MotivoInvalidadacionTarjeta](
+CREATE TABLE [dbo].[MIT](
 	[id] [int] IDENTITY(1,1) NOT NULL,
-	[Nombre] [varchar](50) NOT NULL,
+	[Nombre] [varchar](64) NOT NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[Movimiento]    Script Date: 13/11/2024 18:17:01 ******/
+/****** Object:  Table [dbo].[Movimiento]    Script Date: 14/11/2024 05:12:11 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[Movimiento](
 	[id] [int] IDENTITY(1,1) NOT NULL,
-	[idTF] [int] NULL,
-	[idTH] [int] NOT NULL,
+	[Nombre] [varchar](64) NOT NULL,
+	[idTF] [int] NOT NULL,
 	[FechaMovimiento] [date] NOT NULL,
 	[Monto] [money] NOT NULL,
 	[Descripcion] [varchar](64) NOT NULL,
@@ -72,23 +149,24 @@ PRIMARY KEY CLUSTERED
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[ReglasNegocio]    Script Date: 13/11/2024 18:17:01 ******/
+/****** Object:  Table [dbo].[RN]    Script Date: 14/11/2024 05:12:11 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE TABLE [dbo].[ReglasNegocio](
+CREATE TABLE [dbo].[RN](
 	[id] [int] IDENTITY(1,1) NOT NULL,
+	[Nombre] [varchar](64) NOT NULL,
 	[idTTCM] [int] NOT NULL,
-	[idTipoRN] [int] NOT NULL,
-	[Valor] [decimal](10, 2) NOT NULL,
+	[idTRN] [int] NOT NULL,
+	[Valor] [varchar](64) NOT NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[SubEstadoCuenta]    Script Date: 13/11/2024 18:17:01 ******/
+/****** Object:  Table [dbo].[SubEstadoCuenta]    Script Date: 14/11/2024 05:12:11 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -98,18 +176,18 @@ CREATE TABLE [dbo].[SubEstadoCuenta](
 	[idTCA] [int] NOT NULL,
 	[CantidadOperaciones] [int] NOT NULL,
 	[CantidadOperacionesATM] [int] NOT NULL,
-	[SumaCompras] [decimal](10, 2) NOT NULL,
-	[SumaRetiros] [decimal](10, 2) NOT NULL,
+	[SumaCompras] [money] NOT NULL,
+	[SumaRetiros] [money] NOT NULL,
 	[CantidadRetiros] [int] NOT NULL,
-	[SumaCreditos] [decimal](10, 2) NOT NULL,
-	[SumaDebitos] [decimal](10, 2) NOT NULL,
+	[SumaCreditos] [money] NOT NULL,
+	[SumaDebitos] [money] NOT NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[TCA]    Script Date: 13/11/2024 18:17:01 ******/
+/****** Object:  Table [dbo].[TCA]    Script Date: 14/11/2024 05:12:11 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -117,7 +195,7 @@ GO
 CREATE TABLE [dbo].[TCA](
 	[id] [int] IDENTITY(1,1) NOT NULL,
 	[idTCM] [int] NOT NULL,
-	[Codigo] [varchar](20) NOT NULL,
+	[Codigo] [varchar](32) NOT NULL,
 	[idTH] [int] NOT NULL,
 PRIMARY KEY CLUSTERED 
 (
@@ -125,35 +203,37 @@ PRIMARY KEY CLUSTERED
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[TCM]    Script Date: 13/11/2024 18:17:01 ******/
+/****** Object:  Table [dbo].[TCM]    Script Date: 14/11/2024 05:12:11 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[TCM](
 	[id] [int] IDENTITY(1,1) NOT NULL,
-	[Codigo] [varchar](20) NOT NULL,
+	[Codigo] [varchar](32) NOT NULL,
 	[idTTCM] [int] NOT NULL,
-	[LimiteCredito] [decimal](10, 2) NOT NULL,
+	[LimiteCredito] [money] NOT NULL,
 	[idTH] [int] NOT NULL,
+	[Saldo] [money] NOT NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[TF]    Script Date: 13/11/2024 18:17:01 ******/
+/****** Object:  Table [dbo].[TF]    Script Date: 14/11/2024 05:12:11 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[TF](
 	[id] [int] IDENTITY(1,1) NOT NULL,
-	[Codigo] [int] NOT NULL,
-	[CodigoTC] [int] NOT NULL,
+	[Codigo] [varchar](64) NOT NULL,
+	[CodigoTC] [varchar](64) NOT NULL,
 	[FechaVencimiento] [date] NOT NULL,
 	[CCV] [varchar](4) NOT NULL,
 	[EsActiva] [bit] NOT NULL,
+	[FechaCreacion] [date] NOT NULL,
 	[idMotivoInvalidacion] [int] NULL,
 PRIMARY KEY CLUSTERED 
 (
@@ -161,31 +241,33 @@ PRIMARY KEY CLUSTERED
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[TH]    Script Date: 13/11/2024 18:17:01 ******/
+/****** Object:  Table [dbo].[TH]    Script Date: 14/11/2024 05:12:11 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[TH](
 	[id] [int] IDENTITY(1,1) NOT NULL,
-	[Nombre] [varchar](50) NOT NULL,
-	[idTipoDocumentoIdentidad] [int] NOT NULL,
-	[DocumentoIdentidad] [varchar](20) NOT NULL,
+	[Nombre] [varchar](64) NOT NULL,
+	[DocumentoIdentidad] [varchar](32) NOT NULL,
+	[FechaNacimiento] [date] NOT NULL,
+	[NombreUsuario] [varchar](32) NOT NULL,
+	[Password] [varchar](32) NOT NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[TipoMovimientoCorriente]    Script Date: 13/11/2024 18:17:01 ******/
+/****** Object:  Table [dbo].[TM]    Script Date: 14/11/2024 05:12:11 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE TABLE [dbo].[TipoMovimientoCorriente](
+CREATE TABLE [dbo].[TM](
 	[id] [int] IDENTITY(1,1) NOT NULL,
-	[Nombre] [varchar](50) NOT NULL,
-	[Accion] [varchar](50) NOT NULL,
+	[Nombre] [varchar](64) NOT NULL,
+	[Accion] [varchar](64) NOT NULL,
 	[AcumulaOperacionesATM] [bit] NOT NULL,
 	[AcumulaOperacionesVentana] [bit] NOT NULL,
 PRIMARY KEY CLUSTERED 
@@ -194,72 +276,72 @@ PRIMARY KEY CLUSTERED
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[TipoMovimientoIntereses]    Script Date: 13/11/2024 18:17:01 ******/
+/****** Object:  Table [dbo].[TMIC]    Script Date: 14/11/2024 05:12:11 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE TABLE [dbo].[TipoMovimientoIntereses](
+CREATE TABLE [dbo].[TMIC](
 	[id] [int] IDENTITY(1,1) NOT NULL,
-	[Nombre] [varchar](50) NOT NULL,
+	[Nombre] [varchar](64) NOT NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[TipoMovimientoMoratorios]    Script Date: 13/11/2024 18:17:01 ******/
+/****** Object:  Table [dbo].[TMIM]    Script Date: 14/11/2024 05:12:11 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE TABLE [dbo].[TipoMovimientoMoratorios](
+CREATE TABLE [dbo].[TMIM](
 	[id] [int] IDENTITY(1,1) NOT NULL,
-	[Nombre] [varchar](50) NOT NULL,
+	[Nombre] [varchar](64) NOT NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[TipoReglasNegocio]    Script Date: 13/11/2024 18:17:01 ******/
+/****** Object:  Table [dbo].[TRN]    Script Date: 14/11/2024 05:12:11 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE TABLE [dbo].[TipoReglasNegocio](
+CREATE TABLE [dbo].[TRN](
 	[id] [int] IDENTITY(1,1) NOT NULL,
-	[Nombre] [varchar](50) NOT NULL,
-	[Tipo] [varchar](50) NOT NULL,
+	[Nombre] [varchar](64) NOT NULL,
+	[Tipo] [varchar](64) NOT NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[TTCM]    Script Date: 13/11/2024 18:17:01 ******/
+/****** Object:  Table [dbo].[TTCM]    Script Date: 14/11/2024 05:12:11 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[TTCM](
 	[id] [int] IDENTITY(1,1) NOT NULL,
-	[Nombre] [varchar](50) NOT NULL,
+	[Nombre] [varchar](64) NOT NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[UA]    Script Date: 13/11/2024 18:17:01 ******/
+/****** Object:  Table [dbo].[UA]    Script Date: 14/11/2024 05:12:11 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[UA](
 	[id] [int] IDENTITY(1,1) NOT NULL,
-	[Username] [varchar](50) NOT NULL,
-	[Password] [varchar](50) NOT NULL,
+	[Username] [varchar](64) NOT NULL,
+	[Password] [varchar](64) NOT NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[id] ASC
@@ -272,23 +354,22 @@ GO
 ALTER TABLE [dbo].[Movimiento]  WITH CHECK ADD FOREIGN KEY([idTF])
 REFERENCES [dbo].[TF] ([id])
 GO
-ALTER TABLE [dbo].[Movimiento]  WITH CHECK ADD FOREIGN KEY([idTH])
-REFERENCES [dbo].[TH] ([id])
+ALTER TABLE [dbo].[RN]  WITH CHECK ADD FOREIGN KEY([idTRN])
+REFERENCES [dbo].[TRN] ([id])
 GO
-ALTER TABLE [dbo].[ReglasNegocio]  WITH CHECK ADD FOREIGN KEY([idTipoRN])
-REFERENCES [dbo].[TipoReglasNegocio] ([id])
-GO
-ALTER TABLE [dbo].[ReglasNegocio]  WITH CHECK ADD FOREIGN KEY([idTTCM])
+ALTER TABLE [dbo].[RN]  WITH CHECK ADD FOREIGN KEY([idTTCM])
 REFERENCES [dbo].[TTCM] ([id])
 GO
 ALTER TABLE [dbo].[SubEstadoCuenta]  WITH CHECK ADD FOREIGN KEY([idTCA])
 REFERENCES [dbo].[TCA] ([id])
 GO
-ALTER TABLE [dbo].[TCA]  WITH CHECK ADD FOREIGN KEY([idTCM])
-REFERENCES [dbo].[TTCM] ([id])
-GO
 ALTER TABLE [dbo].[TCA]  WITH CHECK ADD FOREIGN KEY([idTH])
 REFERENCES [dbo].[TH] ([id])
+GO
+ALTER TABLE [dbo].[TCA]  WITH CHECK ADD  CONSTRAINT [FK_TCA_TCM] FOREIGN KEY([idTCM])
+REFERENCES [dbo].[TCM] ([id])
+GO
+ALTER TABLE [dbo].[TCA] CHECK CONSTRAINT [FK_TCA_TCM]
 GO
 ALTER TABLE [dbo].[TCM]  WITH CHECK ADD FOREIGN KEY([idTH])
 REFERENCES [dbo].[TH] ([id])
@@ -297,7 +378,7 @@ ALTER TABLE [dbo].[TCM]  WITH CHECK ADD FOREIGN KEY([idTTCM])
 REFERENCES [dbo].[TTCM] ([id])
 GO
 ALTER TABLE [dbo].[TF]  WITH CHECK ADD FOREIGN KEY([idMotivoInvalidacion])
-REFERENCES [dbo].[MotivoInvalidadacionTarjeta] ([id])
+REFERENCES [dbo].[MIT] ([id])
 GO
 USE [master]
 GO

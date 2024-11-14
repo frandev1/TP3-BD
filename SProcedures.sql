@@ -55,7 +55,7 @@ BEGIN
         WHERE 
             TH.id = @idTH  -- Solo tarjetas asociadas al Tarjetahabiente
         ORDER BY 
-            TF.FechaVencimiento DESC;  -- Orden descendente por fecha de vencimiento
+            TF.FechaCreacion DESC;  -- Orden descendente por fecha de vencimiento
 
         COMMIT TRANSACTION
         

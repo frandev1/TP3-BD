@@ -3,7 +3,7 @@ GO
 
 DECLARE @XmlData XML;
 SELECT @XmlData = CONVERT(XML,BULKColumn)
-FROM OPENROWSET(BULK 'C:\TEC\BasesDatos1\TP3-BD\CatalogosFinal.xml', SINGLE_CLOB) AS x;
+FROM OPENROWSET(BULK 'C:\TEC\BasesDatos1\TP3-BD\CatalogosFinal.xml', SINGLE_BLOB) AS x;
 
 -- Insertar datos en TTCM
 INSERT INTO TTCM (Nombre)
@@ -26,7 +26,7 @@ SELECT
     T.C.value('@Nombre', 'VARCHAR(100)') AS Nombre,
     TTCM.id AS idTTCM,
     TRN.id AS idTRN,
-    T.C.value('@Valor', 'VARCHAR(32)') AS Valor
+    T.C.value('@Valor', 'VARCHAR(64)') AS Valor
 FROM 
     @XmlData.nodes('/root/RN/RN') AS T(C)
 JOIN 
@@ -42,17 +42,28 @@ FROM
     @XmlData.nodes('/root/MIT/MIT') AS M(C);
 
 -- Insertar datos en TM
-INSERT INTO TM (Nombre, Accion, Acumula_Operacion_ATM, Acumula_Operacion_Ventana)
+INSERT INTO TM (
+    Nombre
+    , Accion
+    , AcumulaOperacionesATM
+    , AcumulaOperacionesVentana
+    )
     SELECT 
         T.C.value('@Nombre', 'VARCHAR(50)'),
         T.C.value('@Accion', 'VARCHAR(50)'),
-        T.C.value('@Acumula_Operacion_ATM', 'VARCHAR(2)'),
-        T.C.value('@Acumula_Operacion_Ventana', 'VARCHAR(2)')
+        CASE
+            WHEN 'NO'=T.C.value('@Acumula_Operacion_ATM', 'VARCHAR(2)') THEN 0
+            WHEN 'SI'=T.C.value('@Acumula_Operacion_ATM', 'VARCHAR(2)') THEN 1
+        END AS Acumula_Operacion_ATM,
+        CASE
+            WHEN 'NO'=T.C.value('@Acumula_Operacion_Ventana', 'VARCHAR(2)') THEN 0
+            WHEN 'SI'=T.C.value('@Acumula_Operacion_Ventana', 'VARCHAR(2)') THEN 1
+        END AS Acumula_Operacion_Ventana
     FROM 
         @XmlData.nodes('/root/TM/TM') AS T(C); 
 	
 -- Insetar datos en UA
-INSERT INTO UA (Nombre, Password)
+INSERT INTO UA (Username, Password)
 	SELECT 
 		T.C.value('@Nombre', 'VARCHAR(50)'),
 		T.C.value('@Password', 'VARCHAR(50)')
@@ -73,18 +84,6 @@ INSERT INTO TMIM (Nombre)
 		T.C.value('@nombre', 'VARCHAR(64)')
 	FROM 
 		@XmlData.nodes('/root/TMIM/TMIM') AS T(C);
-
--- Borrar todo el contenido de las tablas
-USE [sistemaTarjetaCredito]
-GO;
--- Desactivar restricciones de claves foráneas
-EXEC sp_MSforeachtable 'ALTER TABLE ? NOCHECK CONSTRAINT ALL';
-
--- Eliminar todos los registros de cada tabla
-EXEC sp_MSforeachtable 'DELETE FROM ?';
-
--- Activar nuevamente las restricciones de claves foráneas
-EXEC sp_MSforeachtable 'ALTER TABLE ? WITH CHECK CHECK CONSTRAINT ALL';
 
 --- Revisar inserción
 SELECT * FROM TTCM
