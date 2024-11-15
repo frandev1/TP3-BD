@@ -6,7 +6,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[ObtenerTarjetasAsociadasTH]
+ALTER PROCEDURE [dbo].[ObtenerTarjetasAsociadasTH]
     @inUsuarioTH VARCHAR(32),  -- Nombre de usuario de la TH
     @OutResultCode INT OUTPUT
 AS
@@ -34,9 +34,9 @@ BEGIN
 
         BEGIN TRANSACTION
 
-        -- Seleccionar las tarjetas asociadas al tarjetahabiente con el tipo de cuenta
+        -- Seleccionar solo las tarjetas asociadas al tarjetahabiente específico (TH)
         SELECT DISTINCT
-            TF.Numero AS NumeroTarjeta,
+            TF.Codigo AS NumeroTarjeta,  -- Código de la tarjeta
             CASE
                 WHEN TF.EsActiva = 1 THEN 'Activa'
                 WHEN TF.EsActiva = 0 THEN 'Inactiva'
@@ -46,16 +46,16 @@ BEGIN
                 WHEN TCA.id IS NOT NULL THEN 'TCA'
                 WHEN TCM.id IS NOT NULL THEN 'TCM'
                 ELSE NULL
-            END AS TipoCuenta
+            END AS TipoCuenta,
+            TF.FechaCreacion
         FROM 
             [sistemaTarjetaCredito].[dbo].[TF] TF
-        LEFT JOIN TCA ON TF.idTCM = TCA.id  -- Relación con TCA
-        LEFT JOIN TCM ON TF.idTCM = TCM.id  -- Relación con TCM
-        INNER JOIN TH ON TH.id = TF.idTH
+        LEFT JOIN TCA ON TF.id = TCA.id  -- Unir con TCA usando el ID de la tarjeta
+        LEFT JOIN TCM ON TF.id = TCM.id  -- Unir con TCM usando el ID de la tarjeta
         WHERE 
-            TH.id = @idTH  -- Solo tarjetas asociadas al Tarjetahabiente
+            (TCA.idTH = @idTH OR TCM.idTH = @idTH)  -- Solo tarjetas asociadas al TH específico
         ORDER BY 
-            TF.FechaCreacion DESC;  -- Orden descendente por fecha de vencimiento
+            TF.FechaCreacion DESC;  -- Orden descendente por fecha de creación
 
         COMMIT TRANSACTION
         
@@ -101,6 +101,29 @@ BEGIN
     SET NOCOUNT OFF;
 END;
 GO
+
+
+SELECT * FROM TF
+SELECT * FROM TH
+
+DECLARE @ResultCode INT;
+
+EXEC [dbo].[ObtenerTarjetasAsociadasTH]
+    @inUsuarioTH = 'jruiz',  -- Reemplaza 'nombre_usuario' con el nombre de usuario que deseas probar
+    @OutResultCode = @ResultCode OUTPUT;
+
+-- Verificar el código de resultado
+IF @ResultCode = 0
+BEGIN
+    PRINT 'Datos obtenidos exitosamente.';
+END
+ELSE
+BEGIN
+    PRINT 'Error al obtener los datos.';
+END
+
+
+
 /****** Object:  StoredProcedure [dbo].[ObtenerTodasLasTarjetas]    Script Date: 13/11/2024 16:28:15 ******/
 SET ANSI_NULLS ON
 GO
@@ -114,48 +137,49 @@ BEGIN
     SET NOCOUNT ON;
 
     BEGIN TRY
-        -- ES ADMIN
+        -- Verificar si el usuario es administrador (cambiado para reflejar la nueva estructura de `UA` si aplica)
         IF EXISTS (
             SELECT 1
-            FROM UA
-            WHERE Nombre = @NombreUsuario
+            FROM UA  -- Asegúrate de que `UA` existe y contiene los nombres de usuario
+            WHERE Username = @NombreUsuario
         )
         BEGIN
-            -- TCM TCA UNION CON TF
+            -- Selección de tarjetas TCM y TCA unidas con TF y TH según la nueva estructura
             SELECT DISTINCT
                 'TCM' AS TipoTarjeta,
-                TCM.Codigo,
-                TF.Numero,
+                TCM.Codigo AS CodigoTarjeta,
+                TF.Codigo AS CodigoTarjetaFisica,
                 TH.Nombre AS NombreTarjetahabiente
             FROM TCM
-            INNER JOIN TF ON TCM.id = TF.idTCM  
+            INNER JOIN TF ON TCM.id = TF.id  -- Asegúrate de que `TF.id` está correctamente relacionado con `TCM.id`
             INNER JOIN TH ON TCM.idTH = TH.id
 
             UNION ALL
 
             SELECT DISTINCT
                 'TCA' AS TipoTarjeta,
-                TCA.Codigo,
-                TF.Numero,
+                TCA.Codigo AS CodigoTarjeta,
+                TF.Codigo AS CodigoTarjetaFisica,
                 TH.Nombre AS NombreTarjetahabiente
             FROM TCA
-            INNER JOIN TF ON TCA.id = TF.idTCM  
+            INNER JOIN TF ON TCA.id = TF.id  -- Asegúrate de que `TF.id` está correctamente relacionado con `TCA.id`
             INNER JOIN TH ON TCA.idTH = TH.id;
 
-            SET @OutResultCode = 0;  -- CORONO
+            -- Establecer el código de salida exitoso
+            SET @OutResultCode = 0;
         END
         ELSE
         BEGIN
-            -- NO ADMIN
+            -- Si no es administrador, establecer código de error
             SET @OutResultCode = 50001;  
             RAISERROR('Usuario no autorizado.', 16, 1);
         END
     END TRY
     BEGIN CATCH
-        -- ERRORES
+        -- Manejo de errores
         SET @OutResultCode = ERROR_NUMBER();
 
-        -- DBERROR
+        -- Insertar el error en la tabla DBError
         INSERT INTO [dbo].[DBError] (
             ErrorUserName,
             ErrorNumber,
@@ -177,12 +201,13 @@ BEGIN
             GETDATE()
         );
 
-        
+        -- Lanzar mensaje de error
         DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
         RAISERROR(@ErrorMessage, 16, 1);
     END CATCH
 END;
 GO
+
 /****** Object:  StoredProcedure [dbo].[verificarUsuario]    Script Date: 13/11/2024 16:28:15 ******/
 SET ANSI_NULLS ON
 GO
@@ -206,7 +231,7 @@ BEGIN
         IF EXISTS (
             SELECT 1 
             FROM [sistemaTarjetaCredito].[dbo].[UA] UA 
-            WHERE UA.Nombre = @inNombre 
+            WHERE UA.Username = @inNombre 
             AND UA.Password = @inPassword
         )
         BEGIN
@@ -259,7 +284,7 @@ END;
 GO
 
 
---PROBAR SP
+--PROBAR SP OBTENER TODAS LAS TARJETAS
 DECLARE @ResultCode INT;
 
 EXEC ObtenerTodasLasTarjetas
@@ -276,3 +301,40 @@ BEGIN
     PRINT 'Error al obtener los datos.';
 END
 
+
+
+SELECT * FROM UA
+
+--PROBAR SP VERIFICAR USUARIO
+DECLARE @OutTipoUsuario INT;
+DECLARE @OutResultCode INT;
+
+EXEC [dbo].[verificarUsuario]
+    @inNombre = 'simple',      -- Reemplaza 'nombre_usuario' con el nombre de usuario que deseas probar
+    @inPassword = 'simple123',  -- Reemplaza 'password_usuario' con la contraseña que deseas probar
+    @OutTipoUsuario = @OutTipoUsuario OUTPUT,
+    @OutResultCode = @OutResultCode OUTPUT;
+
+-- Verificar el código de resultado
+IF @OutResultCode = 0
+BEGIN
+    PRINT 'Autenticación exitosa.';
+    
+    -- Comprobar el tipo de usuario
+    IF @OutTipoUsuario = 0
+    BEGIN
+        PRINT 'Usuario administrativo autenticado.';
+    END
+    ELSE IF @OutTipoUsuario = 1
+    BEGIN
+        PRINT 'Tarjetahabiente autenticado.';
+    END
+    ELSE
+    BEGIN
+        PRINT 'Tipo de usuario desconocido.';
+    END
+END
+ELSE
+BEGIN
+    PRINT 'Error en la autenticación.';
+END

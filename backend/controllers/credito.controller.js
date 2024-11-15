@@ -57,3 +57,25 @@ export const tarjetasTH = async (req, res) => {
         res.status(500).json({ error: 'Error en el servidor' });
     }
 }
+
+// Controlador para obtener todas las tarjetas asociadas a un usuario administrador (UA)
+export const obtenerTodasLasTarjetas = async (req, res) => {
+    const { nombreUsuario } = req.body;
+    try {
+        const pool = await getConnection();
+        const result = await pool.request()
+            .input('NombreUsuario', sql.VarChar, nombreUsuario)
+            .output('OutResultCode', sql.Int, 0)
+            .execute('sistemaTarjetaCredito.dbo.ObtenerTodasLasTarjetas');
+
+        // Revisar el código de resultado
+        if (result.output.OutResultCode === 0) {
+            res.status(200).json(result.recordset); // Enviar las tarjetas obtenidas al frontend
+        } else {
+            res.status(400).json({ msg: 'Error al obtener las tarjetas de crédito' });
+        }
+    } catch (error) {
+        console.error('Error al obtener las tarjetas:', error);
+        res.status(500).json({ error: 'Error en el servidor' });
+    }
+};

@@ -5,7 +5,7 @@ DECLARE @XmlData XML;
 
 -- Cargar el XML desde el archivo en la variable
 SELECT @XmlData = CONVERT(XML, BULKColumn)
-FROM OPENROWSET(BULK 'C:\TEC\BasesDatos1\TP3-BD\OperacionesFinal.xml', SINGLE_CLOB) AS x;
+FROM OPENROWSET(BULK 'C:\Users\MAIKEL\Desktop\TAREA PROGRAMADA 3\TP3-BD\OperacionesFinal.xml', SINGLE_CLOB) AS x;
 
 -- Insertar datos en la tabla TH
 INSERT INTO TH (Nombre, DocumentoIdentidad, FechaNacimiento, NombreUsuario, Password)
