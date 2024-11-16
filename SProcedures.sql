@@ -6,7 +6,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-ALTER PROCEDURE [dbo].[ObtenerTarjetasAsociadasTH]
+CREATE PROCEDURE [dbo].[ObtenerTarjetasAsociadasTH]
     @inUsuarioTH VARCHAR(32),  -- Nombre de usuario de la TH
     @OutResultCode INT OUTPUT
 AS
@@ -50,8 +50,8 @@ BEGIN
             TF.FechaCreacion
         FROM 
             [sistemaTarjetaCredito].[dbo].[TF] TF
-        LEFT JOIN TCA ON TF.id = TCA.id  -- Unir con TCA usando el ID de la tarjeta
-        LEFT JOIN TCM ON TF.id = TCM.id  -- Unir con TCM usando el ID de la tarjeta
+        INNER JOIN TCA ON TF.id = TCA.id  -- Unir con TCA usando el ID de la tarjeta
+        INNER JOIN TCM ON TF.id = TCM.id  -- Unir con TCM usando el ID de la tarjeta
         WHERE 
             (TCA.idTH = @idTH OR TCM.idTH = @idTH)  -- Solo tarjetas asociadas al TH específico
         ORDER BY 
