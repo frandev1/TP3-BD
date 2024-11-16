@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios'
 import './LoginForm.css'
+import { show_alerta } from '../function';
 
 function LoginForm() {  
   const api = 'http://localhost:5000/api'
@@ -25,6 +26,10 @@ function LoginForm() {
     ).then(function(respuesta){
       console.log(respuesta)
       if (respuesta.data.authenticated) {
+          var tipo, msj;
+          msj = respuesta.data.msg
+          tipo = 'success';
+          show_alerta(msj, tipo);
         if (respuesta.data.tipoUsuario == 'UA'){
           const user = {
             nombre: username
@@ -36,13 +41,20 @@ function LoginForm() {
           }
           return navigate('th', { state: { user } })
         }
-    } else {
-        // setMessage('Credenciales incorrectas');
-    }
+    } 
     })
-    .catch(function(respuesta){
-      console.error('Error en la solicitud de inicio de sesión:', respuesta);
-      // setMessage('Error en el servidor');
+    .catch(function(error){
+      var msj = error.response.data.msg;
+      if(error.response.status === 400){
+          show_alerta(msj,'warning');
+      }
+      else if(error.response.status === 401){
+          show_alerta(msj,'warning');
+      }
+      else{
+          show_alerta(msj,'error');
+          console.log(error);
+      }
     })
   };
     return (

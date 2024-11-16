@@ -71,8 +71,17 @@ FROM
     @XmlData.nodes('/root/fechaOperacion/RenovacionRoboPerdida/RRP') AS R(C)
 
 -- Insertar datos en la tabla Movimiento
-INSERT INTO Movimiento (Nombre, idTF, FechaMovimiento, Monto, Descripcion, Referencia)
-SELECT 
+DECLARE @TempMovimiento TABLE (
+    Nombre VARCHAR(64),
+    idTF INT,
+    FechaMovimiento DATE,
+    Monto MONEY,
+    Descripcion VARCHAR(64),
+    Referencia VARCHAR(64)
+);
+
+INSERT INTO @TempMovimiento 
+SELECT
     T.C.value('@Nombre', 'VARCHAR(50)'),
     TF.id AS idTF,
     T.C.value('@FechaMovimiento', 'DATE'),
@@ -82,6 +91,16 @@ SELECT
 FROM 
     @XmlData.nodes('/root/fechaOperacion/Movimiento/Movimiento') AS T(C)
     JOIN TF ON TF.Codigo = T.C.value('@TF', 'VARCHAR(20)') -- Join con TCA usando Codigo para obtener idTF
+
+
+INSERT INTO Movimiento (Nombre, idTF, FechaMovimiento, Monto, Descripcion, Referencia)
+SELECT  T.Nombre,
+        T.idTF,
+        T.FechaMovimiento,
+        T.Monto,
+        T.Descripcion,
+        T.Referencia
+FROM @TempMovimientos AS T
 
 
 SELECT * FROM TH

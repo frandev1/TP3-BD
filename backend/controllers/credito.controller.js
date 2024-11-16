@@ -17,18 +17,37 @@ export const verificarUsuario = async (req, res) => {
         console.log(result.output.OutTipoUsuario);
         if (result.output.OutResultCode === 0) {
             if (result.output.OutTipoUsuario == 0){
-                res.json({
+                res.status(200).json({
                     authenticated: true,
-                    tipoUsuario: 'UA'
+                    tipoUsuario: 'UA',
+                    msg: 'Inicio de sesión exitoso'
                 });
             } else {
-                res.json({
+                res.status(201).json({
                     authenticated: true,
-                    tipoUsuario: 'TH'
+                    tipoUsuario: 'TH',
+                    msg: 'Inicio de sesión exitoso'
                 })
             }
         } else {
-            res.json({ authenticated: false });
+            if (result.output.OutResultCode === 50002) {
+                res.status(400).json({ 
+                    authenticated: false, 
+                    msg: 'Contraseña incorrecta' 
+                });
+            }
+            else if (result.output.OutResultCode === 50003){
+                res.status(401).json({
+                    authenticated: false,
+                    msg: 'Usuario no encontrado'
+                })
+            }
+            else{
+                res.status(402).json({
+                    authenticated: false,
+                    msg: 'Error al iniciar sesión'
+                })
+            }
         }
     } catch (error) {
         console.error('Error en la autenticación:', error);

@@ -213,7 +213,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[verificarUsuario] (
+ALTER PROCEDURE [dbo].[verificarUsuario] (
     @inNombre VARCHAR(50),
     @inPassword VARCHAR(50),
     @OutTipoUsuario INT OUTPUT,
@@ -224,64 +224,108 @@ BEGIN
     SET NOCOUNT ON;
 
     BEGIN TRY
-        -- Inicializar el código de resultado y el tipo de usuario
+        -- Inicializar los valores de salida
         SET @OutResultCode = 0;
+        SET @OutTipoUsuario = NULL;
 
-        -- Verificar en la tabla de usuarios administrativos (UA)
+        -- Verificar si el nombre de usuario existe en la tabla UA
         IF EXISTS (
             SELECT 1 
             FROM [sistemaTarjetaCredito].[dbo].[UA] UA 
-            WHERE UA.Username = @inNombre 
-            AND UA.Password = @inPassword
+            WHERE UA.Username = @inNombre
         )
         BEGIN
-            -- Autenticación exitosa como usuario adiministrativo (UA)
-            SET @OutTipoUsuario = 0;
+            -- Si el nombre existe, verificar la contraseña
+            IF EXISTS (
+                SELECT 1 
+                FROM [sistemaTarjetaCredito].[dbo].[UA] UA 
+                WHERE UA.Username = @inNombre 
+                AND UA.Password = @inPassword
+            )
+            BEGIN
+                -- Credenciales correctas para un usuario administrativo
+                SET @OutTipoUsuario = 0;
+            END
+            ELSE
+            BEGIN
+                -- Contraseña incorrecta para un usuario administrativo
+                SET @OutResultCode = 50002; -- Código para contraseña incorrecta
+            END
         END
         ELSE IF EXISTS (
-            -- Verificar en la tabla de tarjetahabientes (TH)
+            -- Verificar si el nombre de usuario existe en la tabla TH
             SELECT 1 
             FROM [sistemaTarjetaCredito].[dbo].[TH] TH 
-            WHERE TH.NombreUsuario = @inNombre 
-            AND TH.Password = @inPassword
+            WHERE TH.NombreUsuario = @inNombre
         )
         BEGIN
-            -- Autenticación exitosa como tarjetahabiente (TH)
-            SET @OutTipoUsuario = 1;
+            -- Si el nombre existe, verificar la contraseña
+            IF EXISTS (
+                SELECT 1 
+                FROM [sistemaTarjetaCredito].[dbo].[TH] TH 
+                WHERE TH.NombreUsuario = @inNombre 
+                AND TH.Password = @inPassword
+            )
+            BEGIN
+                -- Credenciales correctas para un tarjetahabiente
+                SET @OutTipoUsuario = 1;
+
+                -- Devuelve opcionalmente el nombre del usuario
+                SELECT TH.Nombre
+                FROM [sistemaTarjetaCredito].[dbo].[TH]
+                WHERE TH.NombreUsuario = @inNombre;
+            END
+            ELSE
+            BEGIN
+                -- Contraseña incorrecta para un tarjetahabiente
+                SET @OutResultCode = 50002; -- Código para contraseña incorrecta
+            END
         END
         ELSE
         BEGIN
-            -- Autenticación fallida
-            SET @OutResultCode = 50001
+            -- Usuario no encontrado
+            SET @OutResultCode = 50003; -- Código para usuario no encontrado
         END
     END TRY
     BEGIN CATCH
-    -- Rollback en caso de error
+        -- Rollback en caso de error
         IF @@TRANCOUNT > 0 
         BEGIN
-        ROLLBACK TRANSACTION;
+            ROLLBACK TRANSACTION;
         END;
-        -- Asignar el código de error de la base de datos al resultado de salida
+
+        -- Asignar el código de error genérico
         SET @OutResultCode = 50008;
 
         -- Registrar el error en la tabla DBError
         INSERT INTO [sistemaTarjetaCredito].[dbo].[DBError]
         (
-        ErrorUsername,
-        ErrorNumber,
-        ErrorState,
-        ErrorSeverity,
-        ErrorLine,
-        ErrorProcedure,
-        ErrorMessage,
-        ErrorDateTime)
-		VALUES
-        (SUSER_NAME(), ERROR_NUMBER(), ERROR_STATE(), ERROR_SEVERITY(), ERROR_LINE(), ERROR_PROCEDURE(), ERROR_MESSAGE(), GETDATE());
-    END CATCH
+            ErrorUsername,
+            ErrorNumber,
+            ErrorState,
+            ErrorSeverity,
+            ErrorLine,
+            ErrorProcedure,
+            ErrorMessage,
+            ErrorDateTime
+        )
+        VALUES
+        (
+            SUSER_NAME(),
+            ERROR_NUMBER(),
+            ERROR_STATE(),
+            ERROR_SEVERITY(),
+            ERROR_LINE(),
+            ERROR_PROCEDURE(),
+            ERROR_MESSAGE(),
+            GETDATE()
+        );
+    END CATCH;
 
     SET NOCOUNT OFF;
 END;
 GO
+
 
 
 --PROBAR SP OBTENER TODAS LAS TARJETAS
