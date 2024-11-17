@@ -36,7 +36,7 @@ function TH() {
             <div className='container-fluid'>
                 <div className='row'>
                     <div className='col-12'>
-                        <h2 className='text-bg-light p-3'>Bienvenido, {user?.nombre}</h2>
+                        <h2 className='text-bg-light p-3'>Bienvenid@, {user?.nombre}</h2>
                     </div>
                 </div>
                 <div className='row mt-3'>

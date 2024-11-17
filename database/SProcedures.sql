@@ -213,7 +213,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-ALTER PROCEDURE [dbo].[verificarUsuario] (
+CREATE PROCEDURE [dbo].[verificarUsuario] (
     @inNombre VARCHAR(50),
     @inPassword VARCHAR(50),
     @OutTipoUsuario INT OUTPUT,
