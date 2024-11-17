@@ -10,11 +10,13 @@ export const verificarUsuario = async (req, res) => {
             .input('inNombre', sql.VarChar, nombre)
             .input('inPassword', sql.VarChar, password)
             .output('OutTipoUsuario', sql.VarChar, null)
+            .output('OutNombre', sql.VarChar, null)
             .output('OutResultCode', sql.Int, 0)
             .execute('sistemaTarjetaCredito.dbo.verificarUsuario');
 
-        console.log(result.output.OutResultCode)
+        console.log(result.output.OutResultCode);
         console.log(result.output.OutTipoUsuario);
+        console.log(result.output.OutNombre);
         if (result.output.OutResultCode === 0) {
             if (result.output.OutTipoUsuario == 0){
                 res.status(200).json({
@@ -23,10 +25,12 @@ export const verificarUsuario = async (req, res) => {
                     msg: 'Inicio de sesión exitoso'
                 });
             } else {
+                var Nombre = result.output.OutNombre;
                 res.status(201).json({
                     authenticated: true,
                     tipoUsuario: 'TH',
-                    msg: 'Inicio de sesión exitoso'
+                    msg: 'Inicio de sesión exitoso',
+                    Nombre: Nombre
                 })
             }
         } else {

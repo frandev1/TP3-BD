@@ -2,12 +2,11 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useLocation } from 'react-router-dom';
+import PropTypes from 'prop-types';
 
 function UA() {
     const location = useLocation();
     const user = location.state?.user;
-
-
     const api = 'http://localhost:5000/api';
     const [tarjetas, setTarjetas] = useState([]);
 
@@ -38,7 +37,7 @@ function UA() {
             <div className='container-fluid'>
                 <div className='row'>
                     <div className='col-12'>
-                        <h2 className='text-bg-light p-3'>BIENVENIDO USUARIO ADMINISTRADOR: {user?.nombre}</h2>
+                        <h2 className='text-bg-light p-3'>Bienvenido, {user?.nombre}</h2>
                     </div>
                 </div>
                 <div className='row mt-3'>
@@ -51,7 +50,7 @@ function UA() {
                                         <th>Código de Tarjeta</th>
                                         <th>Código de Tarjeta física</th>
                                         <th>Nombre del Usuario TH</th>
-                                        <th></th>
+                                        <th>Estado de Cuenta</th>
                                     </tr>
                                 </thead>
                                 <tbody className='table-group-divider'>
@@ -61,6 +60,11 @@ function UA() {
                                             <td>{tarjeta.CodigoTarjeta}</td>
                                             <td>{tarjeta.CodigoTarjetaFisica}</td>
                                             <td>{tarjeta.NombreTarjetahabiente}</td>
+                                            <td> <button
+                                                className='btn btn-success' data-bs-toggle='modal' data-bs-target='#modal'>
+                                                <i className='fa-solid fa-clipboard'></i>
+                                                </button>
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -72,5 +76,12 @@ function UA() {
         </div>
     );
 }
+
+
+UA.propTypes = {
+    user: PropTypes.shape({
+        nombre: PropTypes.string.isRequired,
+    })
+};
 
 export default UA;

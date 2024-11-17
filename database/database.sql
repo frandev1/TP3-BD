@@ -158,7 +158,7 @@ CREATE TABLE [dbo].[TCM](
 	[idTTCM] [int] NOT NULL,
 	[LimiteCredito] [money] NOT NULL,
 	[idTH] [int] NOT NULL,
-	[Saldo] [money] NOT NULL,
+	[FechaCreacion] [date] NOT NULL
 PRIMARY KEY CLUSTERED 
 (
 	[id] ASC

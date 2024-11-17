@@ -36,8 +36,10 @@ function LoginForm() {
           }
           return navigate('ua', { state: { user } })
         } else {
+          var Nombre = respuesta.data.Nombre;
           const user = {
-            nombre: username
+            userName: username,
+            nombre: Nombre
           }
           return navigate('th', { state: { user } })
         }

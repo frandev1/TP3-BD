@@ -7,7 +7,6 @@ import axios from 'axios';
 function TH() {
     const location = useLocation();
     const user = location.state?.user;
-
     const api = 'http://localhost:5000/api';
     const [tarjetas, setTarjetas] = useState([]);
 
@@ -15,7 +14,7 @@ function TH() {
         axios.post(
             `${api}/th`,
             {
-                usuarioTH: user?.nombre
+                usuarioTH: user?.userName
             },
             {
                 headers: {
@@ -30,7 +29,7 @@ function TH() {
         .catch(function(error) {
             console.error(error.response?.data?.msg || "Error al obtener las tarjetas");
         });
-    }, [user?.nombre]);
+    }, [user?.userName, user?.nombre]);
 
     return (
         <div>
@@ -80,7 +79,8 @@ function TH() {
 
 TH.propTypes = {
     user: PropTypes.shape({
-        nombre: PropTypes.string.isRequired,
+        userName: PropTypes.string.isRequired,
+        nombre: PropTypes.string.isRequired
     })
 };
 

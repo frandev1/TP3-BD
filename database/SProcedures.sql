@@ -217,6 +217,7 @@ ALTER PROCEDURE [dbo].[verificarUsuario] (
     @inNombre VARCHAR(50),
     @inPassword VARCHAR(50),
     @OutTipoUsuario INT OUTPUT,
+    @OutNombre VARCHAR(64) OUTPUT,
     @OutResultCode INT OUTPUT
 )
 AS
@@ -227,6 +228,7 @@ BEGIN
         -- Inicializar los valores de salida
         SET @OutResultCode = 0;
         SET @OutTipoUsuario = NULL;
+        SET @OutNombre = NULL;
 
         -- Verificar si el nombre de usuario existe en la tabla UA
         IF EXISTS (
@@ -271,7 +273,7 @@ BEGIN
                 SET @OutTipoUsuario = 1;
 
                 -- Devuelve opcionalmente el nombre del usuario
-                SELECT TH.Nombre
+                SELECT @OutNombre = TH.Nombre
                 FROM [sistemaTarjetaCredito].[dbo].[TH]
                 WHERE TH.NombreUsuario = @inNombre;
             END
