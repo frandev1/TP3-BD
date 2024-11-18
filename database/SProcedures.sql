@@ -387,5 +387,28 @@ END
 
 
 
+ALTER PROCEDURE ObtenerMovimientosPorTarjetaFisica
+    @CodigoTarjetaFisica BIGINT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Consulta para obtener los movimientos de la tarjeta física
+    SELECT 
+        M.FechaMovimiento AS [Fecha de Operación],
+        M.Nombre AS [Nombre de Tipo de Movimiento], -- Mantenemos el nombre directamente desde Movimiento
+        M.Descripcion AS [Descripción],
+        M.Referencia,
+        M.Monto,
+        -- Cálculo del nuevo saldo acumulado
+        SUM(M.Monto) OVER (PARTITION BY M.idTF ORDER BY M.FechaMovimiento ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS [Nuevo Saldo]
+    FROM Movimiento M
+    INNER JOIN TF ON M.idTF = TF.id
+    WHERE TF.CodigoTC = @CodigoTarjetaFisica -- Filtro por el código de la tarjeta física
+    ORDER BY M.FechaMovimiento ASC; -- Orden por fecha
+END;
 
 
+EXEC ObtenerMovimientosPorTarjetaFisica @CodigoTarjetaFisica = 99446;
+SELECT * FROM Movimiento
+SELECT * FROM TF

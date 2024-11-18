@@ -102,3 +102,30 @@ export const obtenerTodasLasTarjetas = async (req, res) => {
         res.status(500).json({ error: 'Error en el servidor' });
     }
 };
+
+
+export const getMovimientosPorTarjetaFisica = async (req, res) => {
+    const { codigoTarjeta } = req.params;
+    console.log("Código de tarjeta recibido:", codigoTarjeta);
+
+
+    try {
+        // Obtenemos la conexión
+        const pool = await getConnection();
+
+        // Ejecutamos el procedimiento almacenado
+        const result = await pool
+            .request()
+            .input("CodigoTarjetaFisica", sql.BigInt, codigoTarjeta) // Parametrizamos el input
+            .execute("sistemaTarjetaCredito.dbo.ObtenerMovimientosPorTarjetaFisica"); // Nombre del SP
+            console.log(result.recordset);
+
+
+        // Enviamos los resultados
+        res.json(result.recordset); // Enviamos solo el recordset al cliente
+    } catch (error) {
+        console.error("Error al ejecutar el procedimiento almacenado:", error.message);
+        res.status(500).json({ error: "Error al obtener movimientos." });
+    }
+};
+
