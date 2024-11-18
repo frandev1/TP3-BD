@@ -5,72 +5,7 @@ DECLARE @XmlData XML;
 
 -- Cargar el xml
 SELECT @XmlData = CONVERT(XML, BULKColumn)
-FROM OPENROWSET(BULK 'C:\Users\MAIKEL\Desktop\TAREA PROGRAMADA 3\TP3-BD\OperacionesFinal.xml', SINGLE_CLOB) AS x;
-
-EXEC ProcesarRoboPerdidaXML @XmlData;
-
-
-SELECT * FROM RRP
-SELECT * FROM TF
-
-ALTER PROCEDURE ProcesarRoboPerdidaXML
-    @XMLData XML -- Pasamos la variable como parámetro
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    -- Verificar que el XML contiene datos válidos
-    IF @XMLData IS NULL
-    BEGIN
-        PRINT 'El XML está vacío o no fue proporcionado.';
-        RETURN;
-    END
-
-    -- Insertar los datos del XML en la tabla RRP
-    INSERT INTO RRP (TF, Razon, FechaReporte)
-    SELECT 
-        T.c.value('@TF', 'BIGINT') AS TF,
-        T.c.value('@Razon', 'NVARCHAR(50)') AS Razon,
-        TRY_CONVERT(DATE, F.c.value('@Fecha', 'NVARCHAR(10)'), 111) AS FechaReporte -- Usar TRY_CONVERT para manejar errores
-    FROM @XMLData.nodes('/root/fechaOperacion') AS F(c) -- Nodo que contiene la fecha
-    CROSS APPLY F.c.nodes('RenovacionRoboPerdida/RRP') AS T(c);
-
-    -- Verificar si se insertaron filas
-    IF @@ROWCOUNT = 0
-    BEGIN
-        PRINT 'No se insertaron filas en la tabla RRP. Verifique el XML.';
-        RETURN;
-    END
-
-    -- Actualizar las tarjetas en la tabla TF para invalidarlas
-    UPDATE TF
-    SET 
-        EsActiva = 0, -- Desactivar la tarjeta
-        idMotivoInvalidacion = CASE 
-            WHEN R.Razon = 'Robo' THEN 1 -- Asignar motivo "Robo"
-            WHEN R.Razon = 'Perdida' THEN 2 -- Asignar motivo "Perdida"
-            ELSE NULL
-        END
-    FROM TF
-    INNER JOIN RRP R ON TF.Codigo = R.TF; -- Relacionar por el código de tarjeta
-
-    PRINT 'Las tarjetas reportadas han sido procesadas correctamente.';
-END;
-GO
-
-
-
-
-
-
-
-CREATE TABLE RRP (
-    id INT IDENTITY(1,1) PRIMARY KEY, -- Identificador único
-    TF BIGINT NOT NULL,              -- Código de la tarjeta
-    Razon NVARCHAR(50) NOT NULL,     -- Razón del reporte (Robo o Perdida)
-    FechaReporte DATETIME NOT NULL DEFAULT GETDATE() -- Fecha del reporte
-);
-
+FROM OPENROWSET(BULK 'C:\TEC\BasesDatos1\TP3-BD\OperacionesFinal.xml', SINGLE_CLOB) AS x;
 
 DECLARE @FechaActual DATE;
 DECLARE @Contador INT;
@@ -79,7 +14,7 @@ DECLARE @LargoFecha INT;
 DECLARE @Fecha TABLE(
     id INT IDENTITY(1,1),
     Fecha DATE NOT NULL
-	)
+)
 
 INSERT INTO @Fecha (Fecha)
 SELECT DISTINCT 
@@ -89,6 +24,22 @@ FROM
 
 SELECT @LargoFecha = (SELECT COUNT(*) FROM @XmlData.nodes('/root/fechaOperacion') AS x1(Datos));
 SET @Contador = 1;
+
+DECLARE @RRP TABLE(
+    id INT IDENTITY(1,1), -- Identificador único
+    TF VARCHAR(64) NOT NULL,              -- Código de la tarjeta
+    Razon VARCHAR(64) NOT NULL,     -- Razón del reporte (Robo o Perdida)
+    FechaReporte DATE NOT NULL -- Fecha del reporte
+);
+
+INSERT INTO @RRP (TF, Razon, FechaReporte)
+SELECT
+    T.C.value('@TF', 'VARCHAR(64)') AS TF,
+    T.C.value('@Razon', 'VARCHAR(64)') AS Razon,
+    Fecha.C.value('@Fecha', 'DATE') AS FechaReporte
+FROM 
+    @XmlData.nodes('/root/fechaOperacion') AS Fecha(C)
+    CROSS APPLY Fecha.C.nodes('RenovacionRoboPerdida/RRP') AS T(C);
 
 WHILE @Contador <= @LargoFecha
 BEGIN
@@ -155,24 +106,22 @@ BEGIN
     -- Validar si hay nodos de RenovaciónRoboPerdida para la fecha actual
     IF EXISTS (
         SELECT 1
-        FROM @XmlData.nodes('/root/fechaOperacion') AS Fecha(C)
-        WHERE Fecha.C.value('@Fecha', 'DATE') = @FechaActual
-        AND EXISTS (
-            SELECT 1
-            FROM Fecha.C.nodes('RenovacionRoboPerdida/RRP') AS RRP(C)
-        )
+        FROM @RRP RRP
+        WHERE RRP.FechaReporte = @FechaActual
         )
     BEGIN
-        -- Inserción en la tabla MIT
-        INSERT INTO MIT (Nombre)
-        SELECT
-            T.C.value('@Razon', 'VARCHAR(20)') -- Razón de la renovación (Robo o Pérdida)
-        FROM 
-            @XmlData.nodes('/root/fechaOperacion') AS Fecha(C)
-            CROSS APPLY Fecha.C.nodes('RenovacionRoboPerdida/RRP') AS T(C)
-        WHERE Fecha.C.value('@Fecha', 'DATE') = @FechaActual;
+		UPDATE TF
+		SET
+			EsActiva = 0,
+			idMotivoInvalidacion = (
+				SELECT MIT.id
+				FROM MIT MIT
+				WHERE MIT.Nombre = RRP.Razon
+			)
+		FROM @RRP RRP
+		WHERE Codigo = RRP.TF AND RRP.FechaReporte = @FechaActual
 
-        PRINT 'Datos de RP insertados para la fecha: ' + CONVERT(VARCHAR, @FechaActual);
+		PRINT 'Datos de RP insertados para la fecha: ' + CONVERT(VARCHAR, @FechaActual);
     END
     ELSE
     BEGIN
@@ -209,3 +158,52 @@ SELECT * FROM TCA;
 SELECT * FROM TF;
 SELECT * FROM MIT;
 SELECT * FROM Movimiento;
+SELECT * FROM EstadoCuenta;
+SELECT * FROM SubEstadoCuenta;
+
+-- EXEC ProcesarRoboPerdidaXML @XmlData;
+
+-- ALTER PROCEDURE ProcesarRoboPerdidaXML
+--     @XMLData XML -- Pasamos la variable como parámetro
+-- AS
+-- BEGIN
+--     SET NOCOUNT ON;
+
+--     -- Verificar que el XML contiene datos válidos
+--     IF @XMLData IS NULL
+--     BEGIN
+--         PRINT 'El XML está vacío o no fue proporcionado.';
+--         RETURN;
+--     END
+
+--     -- Insertar los datos del XML en la tabla RRP
+--     INSERT INTO RRP (TF, Razon, FechaReporte)
+--     SELECT 
+--         T.c.value('@TF', 'BIGINT') AS TF,
+--         T.c.value('@Razon', 'NVARCHAR(50)') AS Razon,
+--         TRY_CONVERT(DATE, F.c.value('@Fecha', 'NVARCHAR(10)'), 111) AS FechaReporte -- Usar TRY_CONVERT para manejar errores
+--     FROM @XMLData.nodes('/root/fechaOperacion') AS F(c) -- Nodo que contiene la fecha
+--     CROSS APPLY F.c.nodes('RenovacionRoboPerdida/RRP') AS T(c);
+
+--     -- Verificar si se insertaron filas
+--     IF @@ROWCOUNT = 0
+--     BEGIN
+--         PRINT 'No se insertaron filas en la tabla RRP. Verifique el XML.';
+--         RETURN;
+--     END
+
+--     -- Actualizar las tarjetas en la tabla TF para invalidarlas
+--     UPDATE TF
+--     SET 
+--         EsActiva = 0, -- Desactivar la tarjeta
+--         idMotivoInvalidacion = CASE 
+--             WHEN R.Razon = 'Robo' THEN 1 -- Asignar motivo "Robo"
+--             WHEN R.Razon = 'Perdida' THEN 2 -- Asignar motivo "Perdida"
+--             ELSE NULL
+--         END
+--     FROM TF
+--     INNER JOIN RRP R ON TF.Codigo = R.TF; -- Relacionar por el código de tarjeta
+
+--     PRINT 'Las tarjetas reportadas han sido procesadas correctamente.';
+-- END;
+-- GO
