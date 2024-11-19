@@ -6,13 +6,12 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[ObtenerTarjetasAsociadasTH]
+ALTER PROCEDURE [dbo].[ObtenerTarjetasAsociadasTH]
     @inUsuarioTH VARCHAR(32),  -- Nombre de usuario de la TH
     @OutResultCode INT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
-
     BEGIN TRY
         -- Se inicializa la variable de salida
         SET @OutResultCode = 0;
@@ -20,8 +19,8 @@ BEGIN
         DECLARE @idTH INT;
 
         -- Obtener el id del tarjetahabiente
-        SELECT @idTH = id
-        FROM [sistemaTarjetaCredito].[dbo].[TH]
+        SELECT @idTH = TH.id
+        FROM [sistemaTarjetaCredito].[dbo].[TH] TH
         WHERE NombreUsuario = @inUsuarioTH;
 
         -- Verificar que el id se obtuvo correctamente
@@ -50,12 +49,12 @@ BEGIN
             TF.FechaCreacion
         FROM 
             [sistemaTarjetaCredito].[dbo].[TF] TF
-        INNER JOIN TCA ON TF.id = TCA.id  -- Unir con TCA usando el ID de la tarjeta
-        INNER JOIN TCM ON TF.id = TCM.id  -- Unir con TCM usando el ID de la tarjeta
+        LEFT JOIN TCA TCA ON TF.CodigoTC = TCA.Codigo AND TCA.idTH = @idTH -- Unir con TCA asegurando el idTH
+        LEFT JOIN TCM TCM ON TF.CodigoTC = TCM.Codigo AND TCM.idTH = @idTH -- Unir con TCM asegurando el idTH
         WHERE 
-            (TCA.idTH = @idTH OR TCM.idTH = @idTH)  -- Solo tarjetas asociadas al TH específico
+            TCA.idTH = @idTH OR TCM.idTH = @idTH 
         ORDER BY 
-            TF.FechaCreacion DESC;  -- Orden descendente por fecha de creación
+            TF.FechaCreacion DESC;
 
         COMMIT TRANSACTION
         
@@ -68,7 +67,7 @@ BEGIN
         END;
         
         -- Asignar el código de error de la base de datos al resultado de salida
-        SET @OutResultCode = ERROR_NUMBER();
+        SET @OutResultCode = 50008;
 
         -- Registrar el error en la tabla DBError
         INSERT INTO [sistemaTarjetaCredito].[dbo].[DBError]
@@ -103,24 +102,24 @@ END;
 GO
 
 
-SELECT * FROM TF
-SELECT * FROM TH
+-- SELECT * FROM TF
+-- SELECT * FROM TH
 
-DECLARE @ResultCode INT;
+-- DECLARE @ResultCode INT;
 
-EXEC [dbo].[ObtenerTarjetasAsociadasTH]
-    @inUsuarioTH = 'jruiz',  -- Reemplaza 'nombre_usuario' con el nombre de usuario que deseas probar
-    @OutResultCode = @ResultCode OUTPUT;
+-- EXEC [dbo].[ObtenerTarjetasAsociadasTH]
+--     @inUsuarioTH = 'jruiz',  -- Reemplaza 'nombre_usuario' con el nombre de usuario que deseas probar
+--     @OutResultCode = @ResultCode OUTPUT;
 
--- Verificar el código de resultado
-IF @ResultCode = 0
-BEGIN
-    PRINT 'Datos obtenidos exitosamente.';
-END
-ELSE
-BEGIN
-    PRINT 'Error al obtener los datos.';
-END
+-- -- Verificar el código de resultado
+-- IF @ResultCode = 0
+-- BEGIN
+--     PRINT 'Datos obtenidos exitosamente.';
+-- END
+-- ELSE
+-- BEGIN
+--     PRINT 'Error al obtener los datos.';
+-- END
 
 
 
@@ -129,8 +128,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[ObtenerTodasLasTarjetas]
-    @NombreUsuario VARCHAR(50),
+ALTER PROCEDURE [dbo].[ObtenerTodasLasTarjetas]
+    @inNombreUsuario VARCHAR(50),
     @OutResultCode INT OUTPUT  
 AS
 BEGIN
@@ -141,7 +140,7 @@ BEGIN
         IF EXISTS (
             SELECT 1
             FROM UA  -- Asegúrate de que `UA` existe y contiene los nombres de usuario
-            WHERE Username = @NombreUsuario
+            WHERE Username = @inNombreUsuario
         )
         BEGIN
             -- Selección de tarjetas TCM y TCA unidas con TF y TH según la nueva estructura
@@ -177,7 +176,7 @@ BEGIN
     END TRY
     BEGIN CATCH
         -- Manejo de errores
-        SET @OutResultCode = ERROR_NUMBER();
+        SET @OutResultCode = 50008;
 
         -- Insertar el error en la tabla DBError
         INSERT INTO [dbo].[DBError] (
@@ -213,7 +212,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[verificarUsuario] (
+ALTER PROCEDURE [dbo].[verificarUsuario] (
     @inNombre VARCHAR(50),
     @inPassword VARCHAR(50),
     @OutTipoUsuario INT OUTPUT,
@@ -330,65 +329,65 @@ GO
 
 
 
---PROBAR SP OBTENER TODAS LAS TARJETAS
-DECLARE @ResultCode INT;
+-- --PROBAR SP OBTENER TODAS LAS TARJETAS
+-- DECLARE @ResultCode INT;
 
-EXEC ObtenerTodasLasTarjetas
-    @NombreUsuario = 'simple',  -- Reemplaza con el nombre de usuario del administrador
-    @OutResultCode = @ResultCode OUTPUT;
+-- EXEC ObtenerTodasLasTarjetas
+--     @NombreUsuario = 'simple',  -- Reemplaza con el nombre de usuario del administrador
+--     @OutResultCode = @ResultCode OUTPUT;
 
--- Verificar el código de resultado
-IF @ResultCode = 0
-BEGIN
-    PRINT 'Datos obtenidos exitosamente.';
-END
-ELSE
-BEGIN
-    PRINT 'Error al obtener los datos.';
-END
+-- -- Verificar el código de resultado
+-- IF @ResultCode = 0
+-- BEGIN
+--     PRINT 'Datos obtenidos exitosamente.';
+-- END
+-- ELSE
+-- BEGIN
+--     PRINT 'Error al obtener los datos.';
+-- END
 
 
 
-SELECT * FROM UA
+-- SELECT * FROM UA
 
 --PROBAR SP VERIFICAR USUARIO
-DECLARE @OutTipoUsuario INT;
-DECLARE @OutResultCode INT;
+-- DECLARE @OutTipoUsuario INT;
+-- DECLARE @OutResultCode INT;
 
-EXEC [dbo].[verificarUsuario]
-    @inNombre = 'simple',      -- Reemplaza 'nombre_usuario' con el nombre de usuario que deseas probar
-    @inPassword = 'simple123',  -- Reemplaza 'password_usuario' con la contraseña que deseas probar
-    @OutTipoUsuario = @OutTipoUsuario OUTPUT,
-    @OutResultCode = @OutResultCode OUTPUT;
+-- EXEC [dbo].[verificarUsuario]
+--     @inNombre = 'simple',      -- Reemplaza 'nombre_usuario' con el nombre de usuario que deseas probar
+--     @inPassword = 'simple123',  -- Reemplaza 'password_usuario' con la contraseña que deseas probar
+--     @OutTipoUsuario = @OutTipoUsuario OUTPUT,
+--     @OutResultCode = @OutResultCode OUTPUT;
 
--- Verificar el código de resultado
-IF @OutResultCode = 0
-BEGIN
-    PRINT 'Autenticación exitosa.';
+-- -- Verificar el código de resultado
+-- IF @OutResultCode = 0
+-- BEGIN
+--     PRINT 'Autenticación exitosa.';
     
-    -- Comprobar el tipo de usuario
-    IF @OutTipoUsuario = 0
-    BEGIN
-        PRINT 'Usuario administrativo autenticado.';
-    END
-    ELSE IF @OutTipoUsuario = 1
-    BEGIN
-        PRINT 'Tarjetahabiente autenticado.';
-    END
-    ELSE
-    BEGIN
-        PRINT 'Tipo de usuario desconocido.';
-    END
-END
-ELSE
-BEGIN
-    PRINT 'Error en la autenticación.';
-END
-
+--     -- Comprobar el tipo de usuario
+--     IF @OutTipoUsuario = 0
+--     BEGIN
+--         PRINT 'Usuario administrativo autenticado.';
+--     END
+--     ELSE IF @OutTipoUsuario = 1
+--     BEGIN
+--         PRINT 'Tarjetahabiente autenticado.';
+--     END
+--     ELSE
+--     BEGIN
+--         PRINT 'Tipo de usuario desconocido.';
+--     END
+-- END
+-- ELSE
+-- BEGIN
+--     PRINT 'Error en la autenticación.';
+-- END
+-- GO
 
 
 ALTER PROCEDURE ObtenerMovimientosPorTarjetaFisica
-    @CodigoTarjetaFisica BIGINT
+    @inCodigoTarjetaFisica VARCHAR(64)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -404,11 +403,30 @@ BEGIN
         SUM(M.Monto) OVER (PARTITION BY M.idTF ORDER BY M.FechaMovimiento ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS [Nuevo Saldo]
     FROM Movimiento M
     INNER JOIN TF ON M.idTF = TF.id
-    WHERE TF.CodigoTC = @CodigoTarjetaFisica -- Filtro por el código de la tarjeta física
+    WHERE TF.CodigoTC = @inCodigoTarjetaFisica -- Filtro por el código de la tarjeta física
     ORDER BY M.FechaMovimiento ASC; -- Orden por fecha
 END;
+GO
 
+-- SELECT * FROM Movimiento
+-- SELECT * FROM TF
 
-EXEC ObtenerMovimientosPorTarjetaFisica @CodigoTarjetaFisica = 99446;
-SELECT * FROM Movimiento
-SELECT * FROM TF
+CREATE PROCEDURE ObtenerEstadoCuenta
+    @idTCM INT
+AS
+BEGIN
+    SELECT
+        EC.FechaCorte,
+        EC.PagoMinimo,
+        EC.PagoContratado,
+        EC.InteresesCorrientes,
+        EC.InteresesMoratorios,
+        EC.CantidadOperacionesATM,
+        EC.CantidadOperacionesVentanilla
+    FROM EstadoCuenta EC
+    WHERE idTCM = @idTCM
+    ORDER BY EC.FechaCorte DESC;
+END;
+
+EXEC ObtenerEstadoCuenta @idTCM = 1;
+SELECT * FROM EstadoCuenta

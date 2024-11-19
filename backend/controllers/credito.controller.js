@@ -87,7 +87,7 @@ export const obtenerTodasLasTarjetas = async (req, res) => {
     try {
         const pool = await getConnection();
         const result = await pool.request()
-            .input('NombreUsuario', sql.VarChar, nombreUsuario)
+            .input('inNombreUsuario', sql.VarChar, nombreUsuario)
             .output('OutResultCode', sql.Int, 0)
             .execute('sistemaTarjetaCredito.dbo.ObtenerTodasLasTarjetas');
 
@@ -105,7 +105,7 @@ export const obtenerTodasLasTarjetas = async (req, res) => {
 
 
 export const getMovimientosPorTarjetaFisica = async (req, res) => {
-    const { codigoTarjeta } = req.params;
+    const codigoTarjeta = req.params.codigoTarjetaFisica;
     console.log("Código de tarjeta recibido:", codigoTarjeta);
 
 
@@ -116,7 +116,7 @@ export const getMovimientosPorTarjetaFisica = async (req, res) => {
         // Ejecutamos el procedimiento almacenado
         const result = await pool
             .request()
-            .input("CodigoTarjetaFisica", sql.BigInt, codigoTarjeta) // Parametrizamos el input
+            .input("inCodigoTarjetaFisica", sql.BigInt, codigoTarjeta) // Parametrizamos el input
             .execute("sistemaTarjetaCredito.dbo.ObtenerMovimientosPorTarjetaFisica"); // Nombre del SP
             console.log(result.recordset);
 
