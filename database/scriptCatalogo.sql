@@ -3,7 +3,7 @@ GO
 
 DECLARE @XmlData XML;
 SELECT @XmlData = CONVERT(XML,BULKColumn)
-FROM OPENROWSET(BULK 'C:\Users\MAIKEL\Desktop\TAREA PROGRAMADA 3\TP3-BD\CatalogosFinal.xml', SINGLE_BLOB) AS x;
+FROM OPENROWSET(BULK 'C:\TEC\BasesDatos1\TP3-BD\CatalogosFinal.xml', SINGLE_BLOB) AS x;
 
 -- Insertar datos en TTCM
 INSERT INTO TTCM (Nombre)
@@ -26,7 +26,7 @@ SELECT
     T.C.value('@Nombre', 'VARCHAR(100)') AS Nombre,
     TTCM.id AS idTTCM,
     TRN.id AS idTRN,
-    T.C.value('@Valor', 'VARCHAR(64)') AS Valor
+    T.C.value('@Valor', 'FLOAT') AS Valor
 FROM 
     @XmlData.nodes('/root/RN/RN') AS T(C)
 JOIN 

@@ -5,7 +5,7 @@ DECLARE @XmlData XML;
 
 -- Cargar el xml
 SELECT @XmlData = CONVERT(XML, BULKColumn)
-FROM OPENROWSET(BULK 'C:\Users\MAIKEL\Desktop\TAREA PROGRAMADA 3\TP3-BD\OperacionesFinal.xml', SINGLE_CLOB) AS x;
+FROM OPENROWSET(BULK 'C:\TEC\BasesDatos1\TP3-BD\OperacionesFinal.xml', SINGLE_CLOB) AS x;
 
 DECLARE @FechaActual DATE;
 DECLARE @Contador INT;
@@ -128,14 +128,18 @@ BEGIN
         PRINT 'No se encontraron datos de RP para la fecha: ' + CONVERT(VARCHAR, @FechaActual);
     END;
         
-    INSERT INTO Movimiento (Nombre, idTF, FechaMovimiento, Monto, Descripcion, Referencia)
+    INSERT INTO Movimiento (Nombre, idTF, FechaMovimiento, Monto, Descripcion, Referencia, EsSospechoso)
     SELECT
         T.C.value('@Nombre', 'VARCHAR(50)'),
         TF.id AS idTF,
         T.C.value('@FechaMovimiento', 'DATE'),
         T.C.value('@Monto', 'MONEY'),
         T.C.value('@Descripcion', 'VARCHAR(64)'),
-        T.C.value('@Referencia', 'VARCHAR(64)')
+        T.C.value('@Referencia', 'VARCHAR(64)'),
+        CASE
+            WHEN TF.EsActiva = 0 THEN 1
+            WHEN TF.EsActiva = 1 THEN 0
+        END
     FROM 
         @XmlData.nodes('/root/fechaOperacion') AS Fecha(C)
         CROSS APPLY Fecha.C.nodes('Movimiento/Movimiento') AS T(C)
