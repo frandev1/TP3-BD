@@ -5,7 +5,7 @@ DECLARE @XmlData XML;
 
 -- Cargar el xml
 SELECT @XmlData = CONVERT(XML, BULKColumn)
-FROM OPENROWSET(BULK 'C:\TEC\BasesDatos1\TP3-BD\OperacionesFinal.xml', SINGLE_CLOB) AS x;
+FROM OPENROWSET(BULK 'C:\Users\maike\Desktop\TAREA PROGRAMADA 3\TP3-BD\OperacionesFinal.xml', SINGLE_CLOB) AS x;
 
 DECLARE @FechaActual DATE;
 DECLARE @Contador INT;

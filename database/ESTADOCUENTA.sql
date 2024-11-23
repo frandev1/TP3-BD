@@ -1,118 +1,137 @@
-ALTER PROCEDURE ProcesarEstadoCuenta
-    @idTCM INT,             -- ID de la cuenta a procesar
-    @FechaInicioMes DATE    -- Fecha de inicio del mes a procesar
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    -- Calcular la fecha final del mes
-    DECLARE @FechaFinMes DATE = EOMONTH(@FechaInicioMes);
-
-    -- Paso 1: Apertura del estado de cuenta para el mes
-    IF NOT EXISTS (SELECT 1 FROM EstadoCuenta WHERE idTCM = @idTCM AND FechaCorte = @FechaInicioMes)
-    BEGIN
-        -- Asumir saldo inicial como 0 si no se puede calcular
-        DECLARE @SaldoInicial DECIMAL(18, 2) = 0;
-
-        -- Si el saldo inicial puede calcularse a partir de otro estado de cuenta
-        SELECT TOP 1 @SaldoInicial = SaldoActual
-        FROM EstadoCuenta
-        WHERE idTCM = @idTCM
-        ORDER BY FechaCorte DESC;
-
-        INSERT INTO EstadoCuenta (
-            idTCM,
-            FechaCorte,
-            SaldoActual,
-            PagoContratado,
-            PagoMinimo,
-            FechaPago,
-            InteresesCorrientes,
-            InteresesMoratorios,
-            CantidadOperaciones,
-            CantidadOperacionesMes,
-            SumaPagosAntesFecha,
-            SumaPagosMes,
-            CantidadPagosMes,
-            CantidadCompras,
-            SumaCompras,
-            CantidadRetiros,
-            SumaRetiros,
-            CantidadCreditos,
-            SumaCreditos,
-            CantidadDebitos,
-            SumaDebitos
-        )
-        SELECT 
-            id AS idTCM,
-            @FechaInicioMes AS FechaCorte,
-            @SaldoInicial AS SaldoActual,            -- Utilizar el saldo inicial del estado de cuenta previo o 0
-            0 AS PagoContratado,
-            LimiteCredito * 0.1 AS PagoMinimo,       -- Ejemplo: 10% del límite de crédito como mínimo
-            @FechaFinMes AS FechaPago,              -- Fecha de fin del mes como fecha de pago
-            0 AS InteresesCorrientes,
-            0 AS InteresesMoratorios,
-            0 AS CantidadOperaciones,
-            0 AS CantidadOperacionesMes,
-            0 AS SumaPagosAntesFecha,
-            0 AS SumaPagosMes,
-            0 AS CantidadPagosMes,
-            0 AS CantidadCompras,
-            0 AS SumaCompras,
-            0 AS CantidadRetiros,
-            0 AS SumaRetiros,
-            0 AS CantidadCreditos,
-            0 AS SumaCreditos,
-            0 AS CantidadDebitos,
-            0 AS SumaDebitos
-        FROM TCM
-        WHERE id = @idTCM;
-    END;
-
-    -- Paso 2: Procesar los movimientos del mes y actualizar el estado de cuenta
-    UPDATE EC
-    SET 
-        EC.SaldoActual = EC.SaldoActual + ISNULL(M.Monto, 0), -- Actualizar saldo con el monto del movimiento
-        EC.CantidadOperaciones = EC.CantidadOperaciones + 1, -- Incrementar operaciones totales
-        EC.CantidadOperacionesMes = EC.CantidadOperacionesMes + 1, -- Incrementar operaciones del mes
-        EC.SumaCompras = EC.SumaCompras + CASE WHEN M.Nombre = 'Compra' THEN M.Monto ELSE 0 END, -- Acumular compras
-        EC.CantidadCompras = EC.CantidadCompras + CASE WHEN M.Nombre = 'Compra' THEN 1 ELSE 0 END, -- Contar compras
-        EC.SumaRetiros = EC.SumaRetiros + CASE WHEN M.Nombre LIKE 'Retiro%' THEN M.Monto ELSE 0 END, -- Acumular retiros
-        EC.CantidadRetiros = EC.CantidadRetiros + CASE WHEN M.Nombre LIKE 'Retiro%' THEN 1 ELSE 0 END, -- Contar retiros
-        EC.SumaPagosMes = EC.SumaPagosMes + CASE WHEN M.Nombre LIKE 'Pago%' THEN M.Monto ELSE 0 END, -- Acumular pagos
-        EC.CantidadPagosMes = EC.CantidadPagosMes + CASE WHEN M.Nombre LIKE 'Pago%' THEN 1 ELSE 0 END -- Contar pagos
-    FROM EstadoCuenta EC
-    INNER JOIN TCM ON EC.idTCM = TCM.id
-    INNER JOIN TF ON TF.CodigoTC = TCM.Codigo -- Relación correcta entre TCM y TF
-    INNER JOIN Movimiento M ON M.idTF = TF.id -- Relación correcta entre Movimiento y TF
-    WHERE 
-        M.FechaMovimiento BETWEEN @FechaInicioMes AND @FechaFinMes -- Movimientos del mes
-        AND TCM.id = @idTCM; -- Filtrar por la cuenta específica
-
-    -- Paso 3: Calcular los intereses y cargos del mes
-    UPDATE EC
-    SET
-        EC.InteresesCorrientes = EC.SaldoActual * 0.02, -- Intereses corrientes (ejemplo: 2%)
-        EC.InteresesMoratorios = CASE 
-                                    WHEN EC.SaldoActual > EC.PagoMinimo THEN (EC.SaldoActual - EC.PagoMinimo) * 0.05
-                                    ELSE 0
-                                 END -- Intereses moratorios (ejemplo: 5% si no se cubre el mínimo)
-    FROM EstadoCuenta EC
-    WHERE EC.idTCM = @idTCM;
-
-    -- Paso 4: Mostrar el estado de cuenta actualizado
-    SELECT * 
-    FROM EstadoCuenta
-    WHERE idTCM = @idTCM;
-
-    PRINT 'Estado de cuenta procesado correctamente.';
-END;
+USE [sistemaTarjetaCredito]
 GO
 
+SELECT * FROM TCM
+SELECT * FROM Movimiento
+SELECT * FROM TF
+SELECT * FROM TTCM
+
+
+CREATE TABLE TasaInteres (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    idTTCM INT NOT NULL,
+    TasaInteresesCorrienteMensual DECIMAL(10, 2) NOT NULL,
+    FOREIGN KEY (idTTCM) REFERENCES TTCM(id)
+);
+
+
+INSERT INTO TasaInteres (idTTCM, TasaInteresesCorrienteMensual)
+VALUES
+(1, 2.5),  -- Corporativo: 2.5% mensual
+(2, 3.0),  -- Platino: 3.0% mensual
+(3, 3.5);  -- Oro: 3.5% mensual
 
 
 
-EXEC ProcesarEstadoCuenta 
-    @idTCM = 1,             -- ID de la cuenta
-    @FechaInicioMes = '2024-02-01'; -- Fecha de inicio del mes
+ALTER PROCEDURE GenerarEstadoCuentaMensual
+AS
+BEGIN
+    DECLARE @FechaCorte DATE = GETDATE();
+    DECLARE @TarjetaID INT;
+    DECLARE @TasaInteresesCorrienteMensual DECIMAL(10, 2);
+    DECLARE @SaldoActual MONEY;
+    DECLARE @InteresesCorrientes MONEY;
+    DECLARE @InteresesMoratorios MONEY;
+    DECLARE @SumaDebitos MONEY;
+    DECLARE @SumaCreditos MONEY;
+    DECLARE @PagoContratado MONEY = 0; -- Valor por defecto
+    DECLARE @PagoMinimo MONEY = 0; -- Valor por defecto
+    DECLARE @FechaPago DATE = GETDATE(); -- Valor predeterminado
+    DECLARE @CantidadOperacionesATM INT = 0;
+    DECLARE @CantidadOperacionesVentanilla INT = 0;
+    DECLARE @SumaPagosAntesFecha MONEY = 0;
+    DECLARE @SumaPagosMes MONEY = 0;
+    DECLARE @CantidadPagosMes INT = 0;
+    DECLARE @CantidadCompras INT = 0;
+    DECLARE @CantidadRetiros INT = 0;
+    DECLARE @SumaCompras MONEY = 0;
+    DECLARE @SumaRetiros MONEY = 0;
+    DECLARE @CantidadCreditos INT = 0;
+    DECLARE @CantidadDebitos INT = 0;
 
+    -- Cursor para iterar sobre todas las tarjetas activas
+    DECLARE TarjetasCursor CURSOR FOR
+    SELECT TCM.id, TI.TasaInteresesCorrienteMensual
+    FROM TCM
+    JOIN TasaInteres TI ON TCM.idTTCM = TI.idTTCM
+    
+    OPEN TarjetasCursor;
+    FETCH NEXT FROM TarjetasCursor INTO @TarjetaID, @TasaInteresesCorrienteMensual;
+
+    WHILE @@FETCH_STATUS = 0
+    BEGIN
+        -- Calcular saldo actual sumando los movimientos hasta la fecha de corte
+        SELECT @SaldoActual = ISNULL(SUM(Monto), 0)
+        FROM Movimiento
+        WHERE idTF IN (
+            SELECT TF.id
+            FROM TF
+            WHERE TF.CodigoTC = (SELECT Codigo FROM TCM WHERE id = @TarjetaID)
+        ) AND FechaMovimiento <= @FechaCorte;
+
+        -- Calcular intereses corrientes
+        IF @SaldoActual > 0
+        BEGIN
+            SET @InteresesCorrientes = @SaldoActual * (@TasaInteresesCorrienteMensual / 100) / 30;
+        END
+        ELSE
+        BEGIN
+            SET @InteresesCorrientes = 0;
+        END
+
+        -- Calcular otros valores
+        SET @InteresesMoratorios = 0; -- Agregar lógica si aplica
+        SET @SumaDebitos = ISNULL((
+            SELECT SUM(Monto)
+            FROM Movimiento
+            WHERE idTF IN (
+                SELECT TF.id
+                FROM TF
+                WHERE TF.CodigoTC = (SELECT Codigo FROM TCM WHERE id = @TarjetaID)
+            ) AND Monto < 0 AND FechaMovimiento <= @FechaCorte
+        ), 0);
+
+        SET @SumaCreditos = ISNULL((
+            SELECT SUM(Monto)
+            FROM Movimiento
+            WHERE idTF IN (
+                SELECT TF.id
+                FROM TF
+                WHERE TF.CodigoTC = (SELECT Codigo FROM TCM WHERE id = @TarjetaID)
+            ) AND Monto > 0 AND FechaMovimiento <= @FechaCorte
+        ), 0);
+
+        -- Insertar los datos en la tabla EstadoCuenta
+        INSERT INTO EstadoCuenta (
+            idTCM, FechaCorte, SaldoActual, PagoContratado, 
+            PagoMinimo, FechaPago, InteresesCorrientes, InteresesMoratorios, 
+            CantidadOperacionesATM, CantidadOperacionesVentanilla, SumaPagosAntesFecha, 
+            SumaPagosMes, CantidadPagosMes, CantidadCompras, CantidadRetiros, 
+            SumaCompras, SumaRetiros, CantidadCreditos, SumaCreditos, 
+            CantidadDebitos, SumaDebitos
+        )
+        VALUES (
+            @TarjetaID, @FechaCorte, @SaldoActual, @PagoContratado, 
+            @PagoMinimo, @FechaPago, @InteresesCorrientes, @InteresesMoratorios, 
+            @CantidadOperacionesATM, @CantidadOperacionesVentanilla, @SumaPagosAntesFecha, 
+            @SumaPagosMes, @CantidadPagosMes, @CantidadCompras, @CantidadRetiros, 
+            @SumaCompras, @SumaRetiros, @CantidadCreditos, @SumaCreditos, 
+            @CantidadDebitos, @SumaDebitos
+        );
+
+        -- Pasar a la siguiente tarjeta
+        FETCH NEXT FROM TarjetasCursor INTO @TarjetaID, @TasaInteresesCorrienteMensual;
+    END;
+
+    CLOSE TarjetasCursor;
+    DEALLOCATE TarjetasCursor;
+
+    PRINT 'Proceso de generación de estados de cuenta completado.';
+END;
+
+
+
+
+EXEC GenerarEstadoCuentaMensual;
+SELECT * FROM EstadoCuenta
+EXEC sp_help 'EstadoCuenta';
