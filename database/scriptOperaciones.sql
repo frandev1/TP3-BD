@@ -146,6 +146,54 @@ BEGIN
         JOIN TF ON TF.Codigo = T.C.value('@TF', 'VARCHAR(20)') -- Join con TCA usando Codigo para obtener idTF
 	WHERE Fecha.C.value('@Fecha', 'DATE') = @FechaActual;
 
+    INSERT INTO EstadoCuenta (
+        idTCM,
+        FechaCorte,
+        SaldoActual,
+        PagoContratado,
+        PagoMinimo,
+        FechaPago,
+        InteresesCorrientes,
+        InteresesMoratorios,
+        CantidadOperacionesATM,
+        CantidadOperacionesVentanilla,
+        SumaPagosAntesFecha,
+        SumaPagosMes,
+        CantidadPagosMes,
+        CantidadCompras,
+        CantidadRetiros,
+        SumaCompras,
+        SumaRetiros,
+        CantidadCreditos,
+        SumaCreditos,
+        CantidadDebitos,
+        SumaDebitos
+    )
+    SELECT 
+        EC.idTCM,
+        DATEADD(MONTH, 1, @FechaActual) AS FechaCorte, -- Nueva fecha de corte (1 mes después)
+        0, -- Saldo inicial
+        0, -- Pago contratado inicial
+        0, -- Pago mínimo inicial
+        DATEADD(DAY, 10, DATEADD(MONTH, 1, @FechaActual)), -- Nueva fecha de pago (10 días después de la fecha de corte)
+        0, -- Intereses corrientes iniciales
+        0, -- Intereses moratorios iniciales
+        0, -- Operaciones ATM iniciales
+        0, -- Operaciones ventanilla iniciales
+        0, -- Suma de pagos antes de la fecha inicial
+        0, -- Suma de pagos del mes inicial
+        0, -- Cantidad de pagos inicial
+        0, -- Cantidad de compras inicial
+        0, -- Cantidad de retiros inicial
+        0, -- Suma de compras inicial
+        0, -- Suma de retiros inicial
+        0, -- Cantidad de créditos inicial
+        0, -- Suma de créditos inicial
+        0, -- Cantidad de débitos inicial
+        0 -- Suma de débitos inicial
+    FROM EstadoCuenta EC
+    WHERE EC.FechaCorte = @FechaActual;
+
     SET @Contador = @Contador + 1;
 END;
 
@@ -165,50 +213,3 @@ SELECT * FROM MIT;
 SELECT * FROM Movimiento;
 SELECT * FROM EstadoCuenta;
 SELECT * FROM SubEstadoCuenta;
-
--- EXEC ProcesarRoboPerdidaXML @XmlData;
-
--- ALTER PROCEDURE ProcesarRoboPerdidaXML
---     @XMLData XML -- Pasamos la variable como parámetro
--- AS
--- BEGIN
---     SET NOCOUNT ON;
-
---     -- Verificar que el XML contiene datos válidos
---     IF @XMLData IS NULL
---     BEGIN
---         PRINT 'El XML está vacío o no fue proporcionado.';
---         RETURN;
---     END
-
---     -- Insertar los datos del XML en la tabla RRP
---     INSERT INTO RRP (TF, Razon, FechaReporte)
---     SELECT 
---         T.c.value('@TF', 'BIGINT') AS TF,
---         T.c.value('@Razon', 'NVARCHAR(50)') AS Razon,
---         TRY_CONVERT(DATE, F.c.value('@Fecha', 'NVARCHAR(10)'), 111) AS FechaReporte -- Usar TRY_CONVERT para manejar errores
---     FROM @XMLData.nodes('/root/fechaOperacion') AS F(c) -- Nodo que contiene la fecha
---     CROSS APPLY F.c.nodes('RenovacionRoboPerdida/RRP') AS T(c);
-
---     -- Verificar si se insertaron filas
---     IF @@ROWCOUNT = 0
---     BEGIN
---         PRINT 'No se insertaron filas en la tabla RRP. Verifique el XML.';
---         RETURN;
---     END
-
---     -- Actualizar las tarjetas en la tabla TF para invalidarlas
---     UPDATE TF
---     SET 
---         EsActiva = 0, -- Desactivar la tarjeta
---         idMotivoInvalidacion = CASE 
---             WHEN R.Razon = 'Robo' THEN 1 -- Asignar motivo "Robo"
---             WHEN R.Razon = 'Perdida' THEN 2 -- Asignar motivo "Perdida"
---             ELSE NULL
---         END
---     FROM TF
---     INNER JOIN RRP R ON TF.Codigo = R.TF; -- Relacionar por el código de tarjeta
-
---     PRINT 'Las tarjetas reportadas han sido procesadas correctamente.';
--- END;
--- GO
