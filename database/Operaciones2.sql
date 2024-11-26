@@ -166,6 +166,7 @@ SELECT * FROM Movimiento;
 SELECT * FROM EstadoCuenta;
 SELECT * FROM SubEstadoCuenta;
 
+
 -- EXEC ProcesarRoboPerdidaXML @XmlData;
 
 -- ALTER PROCEDURE ProcesarRoboPerdidaXML
