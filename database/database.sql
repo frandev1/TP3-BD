@@ -94,25 +94,6 @@ PRIMARY KEY CLUSTERED
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[MovimientoSospechoso]    Script Date: 20/11/2024 01:23:28 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[MovimientoSospechoso](
-	[id] [int] IDENTITY(1,1) NOT NULL,
-	[Nombre] [varchar](64) NOT NULL,
-	[idTF] [int] NULL,
-	[FechaMovimiento] [date] NOT NULL,
-	[Monto] [money] NOT NULL,
-	[Descripcion] [varchar](64) NOT NULL,
-	[Referencia] [varchar](64) NOT NULL,
- CONSTRAINT [PK_MovimientoSospechoso] PRIMARY KEY CLUSTERED 
-(
-	[id] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO
 /****** Object:  Table [dbo].[RN]    Script Date: 20/11/2024 01:23:28 ******/
 SET ANSI_NULLS ON
 GO
@@ -319,11 +300,6 @@ GO
 ALTER TABLE [dbo].[Movimiento]  WITH CHECK ADD FOREIGN KEY([idTF])
 REFERENCES [dbo].[TF] ([id])
 GO
-ALTER TABLE [dbo].[MovimientoSospechoso]  WITH CHECK ADD  CONSTRAINT [FK_MovimientoSospechoso_TF] FOREIGN KEY([idTF])
-REFERENCES [dbo].[TF] ([id])
-GO
-ALTER TABLE [dbo].[MovimientoSospechoso] CHECK CONSTRAINT [FK_MovimientoSospechoso_TF]
-GO
 ALTER TABLE [dbo].[RN]  WITH CHECK ADD FOREIGN KEY([idTRN])
 REFERENCES [dbo].[TRN] ([id])
 GO
@@ -378,9 +354,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
--- SELECT * FROM Movimiento
--- SELECT * FROM TF
-
 CREATE PROCEDURE [dbo].[ObtenerEstadosCuenta]
     @inCodigoTC VARCHAR(64),
     @OutResultCode INT
@@ -394,65 +367,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-
--- --PROBAR SP OBTENER TODAS LAS TARJETAS
--- DECLARE @ResultCode INT;
-
--- EXEC ObtenerTodasLasTarjetas
---     @NombreUsuario = 'simple',  -- Reemplaza con el nombre de usuario del administrador
---     @OutResultCode = @ResultCode OUTPUT;
-
--- -- Verificar el código de resultado
--- IF @ResultCode = 0
--- BEGIN
---     PRINT 'Datos obtenidos exitosamente.';
--- END
--- ELSE
--- BEGIN
---     PRINT 'Error al obtener los datos.';
--- END
-
-
-
--- SELECT * FROM UA
-
---PROBAR SP VERIFICAR USUARIO
--- DECLARE @OutTipoUsuario INT;
--- DECLARE @OutResultCode INT;
-
--- EXEC [dbo].[verificarUsuario]
---     @inNombre = 'simple',      -- Reemplaza 'nombre_usuario' con el nombre de usuario que deseas probar
---     @inPassword = 'simple123',  -- Reemplaza 'password_usuario' con la contraseña que deseas probar
---     @OutTipoUsuario = @OutTipoUsuario OUTPUT,
---     @OutResultCode = @OutResultCode OUTPUT;
-
--- -- Verificar el código de resultado
--- IF @OutResultCode = 0
--- BEGIN
---     PRINT 'Autenticación exitosa.';
-    
---     -- Comprobar el tipo de usuario
---     IF @OutTipoUsuario = 0
---     BEGIN
---         PRINT 'Usuario administrativo autenticado.';
---     END
---     ELSE IF @OutTipoUsuario = 1
---     BEGIN
---         PRINT 'Tarjetahabiente autenticado.';
---     END
---     ELSE
---     BEGIN
---         PRINT 'Tipo de usuario desconocido.';
---     END
--- END
--- ELSE
--- BEGIN
---     PRINT 'Error en la autenticación.';
--- END
--- GO
-
 
 CREATE PROCEDURE [dbo].[ObtenerMovimientosPorTarjetaFisica]
     @inCodigoTarjetaFisica VARCHAR(64)

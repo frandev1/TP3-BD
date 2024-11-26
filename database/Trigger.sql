@@ -38,7 +38,8 @@ BEGIN
 		0,
 		0,
 		0,
-		DATEADD(DAY, 10, DATEADD(DAY, 10, I.FechaCreacion)),
+		DATEADD(DAY, CAST(RN.Valor AS int),
+            I.FechaCreacion),
 		0,
 		0,
 		0,
@@ -54,7 +55,19 @@ BEGIN
 		0,
 		0,
 		0
-	FROM inserted I;
+	FROM inserted I
+    INNER JOIN dbo.TH TH ON I.IdTH = TH.id
+    INNER JOIN dbo.TTCM TTCM ON I.idTTCM = TTCM.id
+    INNER JOIN dbo.TRN TRN ON TRN.Nombre = 'Cantidad de dias'
+    INNER JOIN dbo.RN RN ON RN.idTRN = TRN.id 
+        AND RN.idTTCM = I.idTTCM
+    WHERE NOT EXISTS (
+        -- Evitar duplicados
+        SELECT 1 
+        FROM dbo.EstadoCuenta EC 
+        WHERE EC.IdTCM = I.Id
+    );
+
 END
 GO
 
@@ -230,5 +243,81 @@ BEGIN
 END;
 GO
 
+CREATE TRIGGER [dbo].[trUpdateEstadoCuenta]
+ON [dbo].[Movimiento]
+AFTER INSERT
+AS
+BEGIN
+    SET NOCOUNT ON;
 
+    -- Crear una tabla temporal para almacenar las tarjetas y su tipo (TCM o TCA)
+    DECLARE @Tarjetas TABLE (
+        idTF INT,
+        TipoTC VARCHAR(3), -- 'TCM' o 'TCA'
+        idCuenta INT -- idTCM o idTCA según corresponda
+    );
 
+    -- Poblar la tabla temporal con los datos de las tarjetas afectadas
+    INSERT INTO @Tarjetas (idTF, TipoTC, idCuenta)
+    SELECT 
+        I.idTF,
+        CASE 
+            WHEN TCM.id IS NOT NULL THEN 'TCM'
+            WHEN TCA.id IS NOT NULL THEN 'TCA'
+        END AS TipoTC,
+        COALESCE(TCM.id, TCA.id) AS idCuenta
+    FROM inserted I
+    LEFT JOIN TF ON I.idTF = TF.id
+    LEFT JOIN TCM ON TF.CodigoTC = TCM.Codigo
+    LEFT JOIN TCA ON TF.CodigoTC = TCA.Codigo
+    WHERE I.EsSospechoso = 0; -- Solo procesar movimientos no sospechosos
+
+    -- Actualizar EstadoCuenta para tarjetas asociadas a TCM
+    UPDATE EC
+    SET 
+        EC.SaldoActual = EC.SaldoActual + 
+            CASE 
+                WHEN I.Nombre IN ('Compra', 'Retiro', 'Debito') THEN -I.Monto
+                WHEN I.Nombre IN ('Credito') THEN I.Monto
+                ELSE 0 
+            END,
+        EC.CantidadCompras = EC.CantidadCompras + 
+            CASE WHEN I.Nombre = 'Compra' THEN 1 ELSE 0 END,
+        EC.SumaCompras = EC.SumaCompras + 
+            CASE WHEN I.Nombre = 'Compra' THEN I.Monto ELSE 0 END,
+        EC.CantidadRetiros = EC.CantidadRetiros + 
+            CASE WHEN I.Nombre = 'Retiro' THEN 1 ELSE 0 END,
+        EC.SumaRetiros = EC.SumaRetiros + 
+            CASE WHEN I.Nombre = 'Retiro' THEN I.Monto ELSE 0 END,
+        EC.CantidadCreditos = EC.CantidadCreditos + 
+            CASE WHEN I.Nombre = 'Credito' THEN 1 ELSE 0 END,
+        EC.SumaCreditos = EC.SumaCreditos + 
+            CASE WHEN I.Nombre = 'Credito' THEN I.Monto ELSE 0 END,
+        EC.CantidadDebitos = EC.CantidadDebitos + 
+            CASE WHEN I.Nombre = 'Debito' THEN 1 ELSE 0 END,
+        EC.SumaDebitos = EC.SumaDebitos + 
+            CASE WHEN I.Nombre = 'Debito' THEN I.Monto ELSE 0 END
+    FROM EstadoCuenta EC
+    INNER JOIN @Tarjetas T ON T.idCuenta = EC.idTCM AND T.TipoTC = 'TCM'
+    INNER JOIN inserted I ON T.idTF = I.idTF
+    WHERE EC.FechaCorte >= I.FechaMovimiento; -- Validar que corresponde al estado de cuenta actual
+
+    -- Actualizar SubEstadoCuenta para tarjetas asociadas a TCA
+    UPDATE SEC
+    SET 
+        SEC.SumaCompras = SEC.SumaCompras + 
+            CASE WHEN I.Nombre = 'Compra' THEN I.Monto ELSE 0 END,
+        SEC.SumaRetiros = SEC.SumaRetiros + 
+            CASE WHEN I.Nombre = 'Retiro' THEN I.Monto ELSE 0 END,
+        SEC.CantidadRetiros = SEC.CantidadRetiros + 
+            CASE WHEN I.Nombre = 'Retiro' THEN 1 ELSE 0 END,
+        SEC.SumaCreditos = SEC.SumaCreditos + 
+            CASE WHEN I.Nombre = 'Credito' THEN I.Monto ELSE 0 END,
+        SEC.SumaDebitos = SEC.SumaDebitos + 
+            CASE WHEN I.Nombre = 'Debito' THEN I.Monto ELSE 0 END
+    FROM SubEstadoCuenta SEC
+    INNER JOIN @Tarjetas T ON T.idCuenta = SEC.idTCA AND T.TipoTC = 'TCA'
+    INNER JOIN inserted I ON T.idTF = I.idTF
+    WHERE SEC.FechaCorte >= I.FechaMovimiento; -- Validar que corresponde al estado de cuenta actual
+END;
+GO
