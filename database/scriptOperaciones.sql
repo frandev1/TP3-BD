@@ -175,7 +175,7 @@ BEGIN
         0, -- Saldo inicial
         0, -- Pago contratado inicial
         0, -- Pago mínimo inicial
-        DATEADD(DAY, 10, DATEADD(MONTH, 1, @FechaActual)), -- Nueva fecha de pago (10 días después de la fecha de corte)
+        DATEADD(DAY, CAST(RN.Valor AS int), DATEADD(MONTH, 1, @FechaActual)), -- Nueva fecha de pago (10 días después de la fecha de corte)
         0, -- Intereses corrientes iniciales
         0, -- Intereses moratorios iniciales
         0, -- Operaciones ATM iniciales
@@ -192,6 +192,12 @@ BEGIN
         0, -- Cantidad de débitos inicial
         0 -- Suma de débitos inicial
     FROM EstadoCuenta EC
+    INNER JOIN dbo.TCM TCM ON TCM.id = EC.idTCM
+    INNER JOIN dbo.TTCM TTCM ON TCM.idTTCM = TTCM.id
+    INNER JOIN dbo.TRN TRN ON TRN.Nombre = 'Cantidad de dias'
+    INNER JOIN dbo.RN RN ON RN.idTRN = TRN.id 
+        AND RN.idTTCM = TCM.idTTCM
+        AND RN.Nombre = 'Cantidad de dias para pago saldo de contado'
     WHERE EC.FechaCorte = @FechaActual;
 
     SET @Contador = @Contador + 1;
