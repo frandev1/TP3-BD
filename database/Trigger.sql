@@ -180,14 +180,28 @@ BEGIN
             -- Calcular la nueva fecha de vencimiento
             SET @NuevaFechaVencimiento = DATEADD(YEAR, @CantidadAnos, GETDATE());
 
-            SET @NuevoVIN = RIGHT('0000000000000000' + CAST((ABS(CHECKSUM(NEWID())) % 10000000000000000) AS VARCHAR), 16);
+            SET @NuevoVIN = CAST(ABS(CHECKSUM(NEWID())) AS BIGINT);
 
-            WHILE EXISTS (SELECT 1
-            FROM TF
-            WHERE Codigo = @NuevoVIN)
+            WHILE LEN(@NuevoVIN) < 16
+            BEGIN 
+                SET @NuevoVIN = @NuevoVIN + CAST(ABS(CHECKSUM(NEWID())) AS VARCHAR);
+            END
+
+            SET @NuevoVIN = LEFT(@NuevoVIN, 16);
+
+            WHILE EXISTS (SELECT 1 FROM TF WHERE Codigo = @NuevoVIN) --Verificar si solo hay ese o como es la vara
             BEGIN
-                SET @NuevoVIN = RIGHT('0000000000000000' + CAST((ABS(CHECKSUM(NEWID())) % 10000000000000000) AS VARCHAR), 16);
-            END;
+
+                --Hacer la vara de nuevo en caso de que haya uno ahí medio parecido en la trama
+                SET @NuevoVIN = CAST(ABS(CHECKSUM(NEWID())) AS BIGINT);
+
+                WHILE LEN(@NuevoVIN) < 16
+                BEGIN
+                    SET @NuevoVIN = @NuevoVIN + CAST(ABS(CHECKSUM(NEWID())) AS VARCHAR);
+                END
+
+                SET @NuevoVIN = LEFT(@NuevoVIN, 16);
+            END
 
             -- Generar un nuevo CCV aleatorio (4 dígitos)
             SET @NuevoCCV = RIGHT('0000' + CAST((ABS(CHECKSUM(NEWID())) % 10000) AS VARCHAR), 4);
@@ -218,20 +232,28 @@ BEGIN
             -- Calcular la nueva fecha de vencimiento
             SET @NuevaFechaVencimiento = DATEADD(YEAR, @CantidadAnos, GETDATE());
 
-            -- Generar un nuevo VIN único
-            SET @NuevoVIN = CAST(ABS(CHECKSUM(NEWID())) AS BIGINT) 
-                          + CAST(ABS(CHECKSUM(NEWID())) % 1000000000000 AS BIGINT);
+            SET @NuevoVIN = CAST(ABS(CHECKSUM(NEWID())) AS BIGINT);
 
-            SET @NuevoVIN = RIGHT('0000000000000000' + CAST(@NuevoVIN AS VARCHAR), 16);
+            WHILE LEN(@NuevoVIN) < 16
+            BEGIN 
+                SET @NuevoVIN = @NuevoVIN + CAST(ABS(CHECKSUM(NEWID())) AS VARCHAR);
+            END
 
-            WHILE EXISTS (SELECT 1
-            FROM TF
-            WHERE Codigo = @NuevoVIN)
+            SET @NuevoVIN = LEFT(@NuevoVIN, 16);
+
+            WHILE EXISTS (SELECT 1 FROM TF WHERE Codigo = @NuevoVIN) --Verificar si solo hay ese o como es la vara
             BEGIN
-                SET @NuevoVIN = CAST(ABS(CHECKSUM(NEWID())) AS BIGINT) 
-                              + CAST(ABS(CHECKSUM(NEWID())) % 1000000000000 AS BIGINT);
-                SET @NuevoVIN = RIGHT('0000000000000000' + CAST(@NuevoVIN AS VARCHAR), 16);
-            END;
+
+                --Hacer la vara de nuevo en caso de que haya uno ahí medio parecido en la trama
+                SET @NuevoVIN = CAST(ABS(CHECKSUM(NEWID())) AS BIGINT);
+
+                WHILE LEN(@NuevoVIN) < 16
+                BEGIN
+                    SET @NuevoVIN = @NuevoVIN + CAST(ABS(CHECKSUM(NEWID())) AS VARCHAR);
+                END
+
+                SET @NuevoVIN = LEFT(@NuevoVIN, 16);
+            END
 
             -- Generar un nuevo CCV aleatorio (3 dígitos)
             SET @NuevoCCV = RIGHT('0000' + CAST((ABS(CHECKSUM(NEWID())) % 1000) AS VARCHAR), 4);
@@ -249,45 +271,20 @@ BEGIN
 END;
 GO
 
-CREATE TRIGGER [dbo].[trUpdateEstadoCuenta]
+CREATE TRIGGER [dbo].[trUpdateEstadoCuentaOnMovimiento]
 ON [dbo].[Movimiento]
 AFTER INSERT
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- Crear una tabla temporal para almacenar las tarjetas y su tipo (TCM o TCA)
-    DECLARE @Tarjetas TABLE (
-        idTF INT,
-        TipoTC VARCHAR(3),
-        -- 'TCM' o 'TCA'
-        idCuenta INT -- idTCM o idTCA según corresponda
-    );
-
-    -- Poblar la tabla temporal con los datos de las tarjetas afectadas
-    INSERT INTO @Tarjetas
-        (idTF, TipoTC, idCuenta)
-    SELECT
-        I.idTF,
-        CASE 
-            WHEN TCM.id IS NOT NULL THEN 'TCM'
-            WHEN TCA.id IS NOT NULL THEN 'TCA'
-        END AS TipoTC,
-        COALESCE(TCM.id, TCA.id) AS idCuenta
-    FROM inserted I
-        LEFT JOIN TF ON I.idTF = TF.id
-        LEFT JOIN TCM ON TF.CodigoTC = TCM.Codigo
-        LEFT JOIN TCA ON TF.CodigoTC = TCA.Codigo
-    WHERE I.EsSospechoso = 0;
-    -- Solo procesar movimientos no sospechosos
-
-    -- Actualizar EstadoCuenta para tarjetas asociadas a TCM
+    -- Actualización de EstadoCuenta para tarjetas maestras (TCM)
     UPDATE EC
     SET 
         EC.SaldoActual = EC.SaldoActual + 
             CASE 
                 WHEN I.Nombre IN ('Compra', 'Retiro', 'Debito') THEN -I.Monto
-                WHEN I.Nombre IN ('Credito') THEN I.Monto
+                WHEN I.Nombre = 'Credito' THEN I.Monto
                 ELSE 0 
             END,
         EC.CantidadCompras = EC.CantidadCompras + 
@@ -307,12 +304,12 @@ BEGIN
         EC.SumaDebitos = EC.SumaDebitos + 
             CASE WHEN I.Nombre = 'Debito' THEN I.Monto ELSE 0 END
     FROM EstadoCuenta EC
-        INNER JOIN @Tarjetas T ON T.idCuenta = EC.idTCM AND T.TipoTC = 'TCM'
-        INNER JOIN inserted I ON T.idTF = I.idTF
+        INNER JOIN TCM ON EC.idTCM = TCM.id
+        INNER JOIN TF ON TCM.Codigo = TF.CodigoTC
+        INNER JOIN inserted I ON I.idTF = TF.id
     WHERE EC.FechaCorte >= I.FechaMovimiento;
-    -- Validar que corresponde al estado de cuenta actual
 
-    -- Actualizar SubEstadoCuenta para tarjetas asociadas a TCA
+    -- Actualización de SubEstadoCuenta para tarjetas adicionales (TCA)
     UPDATE SEC
     SET 
         SEC.SumaCompras = SEC.SumaCompras + 
@@ -326,10 +323,12 @@ BEGIN
         SEC.SumaDebitos = SEC.SumaDebitos + 
             CASE WHEN I.Nombre = 'Debito' THEN I.Monto ELSE 0 END
     FROM SubEstadoCuenta SEC
-        INNER JOIN @Tarjetas T ON T.idCuenta = SEC.idTCA AND T.TipoTC = 'TCA'
-        INNER JOIN inserted I ON T.idTF = I.idTF
+        INNER JOIN TCA ON SEC.idTCA = TCA.id
+        INNER JOIN TF ON TCA.Codigo = TF.CodigoTC
+        INNER JOIN inserted I ON I.idTF = TF.id
     WHERE SEC.FechaCorte >= I.FechaMovimiento;
--- Validar que corresponde al estado de cuenta actual
+
 END;
 GO
+
 
