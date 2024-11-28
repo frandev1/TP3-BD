@@ -1,12 +1,112 @@
-USE [sistemaTarjetaCredito]
-GO
-
-/****** Object:  StoredProcedure [dbo].[ObtenerTarjetasAsociadasTH]    Script Date: 13/11/2024 16:28:15 ******/
+/****** Object:  StoredProcedure [dbo].[ObtenerEstadoCuenta]    Script Date: 20/11/2024 01:23:28 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-ALTER PROCEDURE [dbo].[ObtenerTarjetasAsociadasTH]
+ALTER PROCEDURE [dbo].[ObtenerEstadoCuenta]
+    @InCodigoTF VARCHAR(64),
+    @InTipoTF VARCHAR(4),
+    @OutResultCode INT OUTPUT
+AS
+BEGIN
+    BEGIN TRY
+
+    DECLARE @idTC INT;
+
+    BEGIN TRANSACTION
+
+    SET @OutResultCode = 0;
+
+    IF (@InTipoTF = 'TCM')
+    BEGIN 
+
+        SELECT
+            @idTC = TCM.id
+        FROM TCM
+        INNER JOIN TF ON TF.Codigo = @InCodigoTF
+        WHERE TCM.Codigo = TF.CodigoTC;
+
+        SELECT
+            EC.FechaCorte,
+            EC.PagoMinimo,
+            EC.PagoContratado,
+            EC.InteresesCorrientes,
+            EC.InteresesMoratorios,
+            EC.CantidadOperacionesATM,
+            EC.CantidadOperacionesVentanilla
+        FROM EstadoCuenta EC
+        WHERE EC.idTCM = @idTC
+        ORDER BY EC.FechaCorte DESC;
+    END
+    
+    IF (@InTipoTF = 'TCA')
+    BEGIN
+
+        SELECT
+            @idTC = TCA.id
+        FROM TCA
+        INNER JOIN TF ON TF.Codigo = @InCodigoTF
+        WHERE TCA.Codigo = TF.CodigoTC;
+        
+        SELECT
+            SEC.FechaCorte,
+            SEC.CantidadOperacionesATM,
+            SEC.CantidadOperacionesVentanilla,
+            SEC.CantidadCompras,
+            SEC.SumaCompras,
+            SEC.CantidadRetiros,
+            SEC.CantidadRetiros
+        FROM SubEstadoCuenta SEC
+        INNER JOIN TF ON TF.Codigo = @InCodigoTF
+        WHERE SEC.idTCA = @idTC
+        ORDER BY SEC.FechaCorte DESC;
+    END
+
+    COMMIT TRANSACTION
+
+    END TRY
+    BEGIN CATCH
+        -- Rollback en caso de error
+        IF @@TRANCOUNT > 0 
+        BEGIN
+            ROLLBACK TRANSACTION;
+        END;
+        
+        -- Asignar el código de error de la base de datos al resultado de salida
+        SET @OutResultCode = 50008;
+
+        -- Registrar el error en la tabla DBError
+        INSERT INTO [sistemaTarjetaCredito].[dbo].[DBError]
+        (
+            ErrorUsername,
+            ErrorNumber,
+            ErrorState,
+            ErrorSeverity,
+            ErrorLine,
+            ErrorProcedure,
+            ErrorMessage,
+            ErrorDateTime
+        )
+        VALUES
+        (
+            SUSER_NAME(),
+            ERROR_NUMBER(),
+            ERROR_STATE(),
+            ERROR_SEVERITY(),
+            ERROR_LINE(),
+            ERROR_PROCEDURE(),
+            ERROR_MESSAGE(),
+            GETDATE()
+        );
+    END CATCH
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[ObtenerTarjetasAsociadasTH]    Script Date: 20/11/2024 01:23:28 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[ObtenerTarjetasAsociadasTH]
     @inUsuarioTH VARCHAR(32),  -- Nombre de usuario de la TH
     @OutResultCode INT OUTPUT
 AS
@@ -100,35 +200,12 @@ BEGIN
     SET NOCOUNT OFF;
 END;
 GO
-
-
--- SELECT * FROM TF
--- SELECT * FROM TH
-
--- DECLARE @ResultCode INT;
-
--- EXEC [dbo].[ObtenerTarjetasAsociadasTH]
---     @inUsuarioTH = 'jruiz',  -- Reemplaza 'nombre_usuario' con el nombre de usuario que deseas probar
---     @OutResultCode = @ResultCode OUTPUT;
-
--- -- Verificar el código de resultado
--- IF @ResultCode = 0
--- BEGIN
---     PRINT 'Datos obtenidos exitosamente.';
--- END
--- ELSE
--- BEGIN
---     PRINT 'Error al obtener los datos.';
--- END
-
-
-
-/****** Object:  StoredProcedure [dbo].[ObtenerTodasLasTarjetas]    Script Date: 13/11/2024 16:28:15 ******/
+/****** Object:  StoredProcedure [dbo].[ObtenerTodasLasTarjetas]    Script Date: 20/11/2024 01:23:28 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-ALTER PROCEDURE [dbo].[ObtenerTodasLasTarjetas]
+CREATE PROCEDURE [dbo].[ObtenerTodasLasTarjetas]
     @inNombreUsuario VARCHAR(50),
     @OutResultCode INT OUTPUT  
 AS
@@ -144,25 +221,24 @@ BEGIN
         )
         BEGIN
             -- Selección de tarjetas TCM y TCA unidas con TF y TH según la nueva estructura
-            SELECT DISTINCT
-                'TCM' AS TipoTarjeta,
-                TCM.Codigo AS CodigoTarjeta,
-                TF.Codigo AS CodigoTarjetaFisica,
-                TH.Nombre AS NombreTarjetahabiente
-            FROM TCM
-            INNER JOIN TF ON TCM.id = TF.id  -- Asegúrate de que `TF.id` está correctamente relacionado con `TCM.id`
-            INNER JOIN TH ON TCM.idTH = TH.id
-
-            UNION ALL
-
-            SELECT DISTINCT
-                'TCA' AS TipoTarjeta,
-                TCA.Codigo AS CodigoTarjeta,
-                TF.Codigo AS CodigoTarjetaFisica,
-                TH.Nombre AS NombreTarjetahabiente
-            FROM TCA
-            INNER JOIN TF ON TCA.id = TF.id  -- Asegúrate de que `TF.id` está correctamente relacionado con `TCA.id`
-            INNER JOIN TH ON TCA.idTH = TH.id;
+            SELECT
+                TF.Codigo AS NumeroTarjeta,
+                CASE
+                    WHEN TF.EsActiva = 1 THEN 'Activa'
+                    ELSE 'Inactiva'
+                END AS EstadoCuenta,
+                CASE
+                    WHEN TCA.id IS NOT NULL THEN 'TCA'
+                    WHEN TCM.id IS NOT NULL THEN 'TCM'
+                    ELSE NULL
+                END AS TipoCuenta,
+                TF.FechaVencimiento,
+				TH.Nombre AS NombreTH
+            FROM TF
+            LEFT JOIN TCA ON TCA.Codigo = TF.CodigoTC
+            LEFT JOIN TCM ON TCM.Codigo = TF.CodigoTC
+			LEFT JOIN TH ON TCA.idTH = TH.id OR TCM.idTH = TH.id
+			ORDER BY TF.FechaCreacion DESC;
 
             -- Establecer el código de salida exitoso
             SET @OutResultCode = 0;
@@ -199,20 +275,15 @@ BEGIN
             ERROR_MESSAGE(),
             GETDATE()
         );
-
-        -- Lanzar mensaje de error
-        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
-        RAISERROR(@ErrorMessage, 16, 1);
     END CATCH
 END;
 GO
-
-/****** Object:  StoredProcedure [dbo].[verificarUsuario]    Script Date: 13/11/2024 16:28:15 ******/
+/****** Object:  StoredProcedure [dbo].[verificarUsuario]    Script Date: 20/11/2024 01:23:28 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-ALTER PROCEDURE [dbo].[verificarUsuario] (
+CREATE PROCEDURE [dbo].[verificarUsuario] (
     @inNombre VARCHAR(50),
     @inPassword VARCHAR(50),
     @OutTipoUsuario INT OUTPUT,
@@ -329,92 +400,25 @@ GO
 
 
 
--- --PROBAR SP OBTENER TODAS LAS TARJETAS
--- DECLARE @ResultCode INT;
-
--- EXEC ObtenerTodasLasTarjetas
---     @NombreUsuario = 'simple',  -- Reemplaza con el nombre de usuario del administrador
---     @OutResultCode = @ResultCode OUTPUT;
-
--- -- Verificar el código de resultado
--- IF @ResultCode = 0
--- BEGIN
---     PRINT 'Datos obtenidos exitosamente.';
--- END
--- ELSE
--- BEGIN
---     PRINT 'Error al obtener los datos.';
--- END
 
 
 
--- SELECT * FROM UA
-
---PROBAR SP VERIFICAR USUARIO
--- DECLARE @OutTipoUsuario INT;
--- DECLARE @OutResultCode INT;
-
--- EXEC [dbo].[verificarUsuario]
---     @inNombre = 'simple',      -- Reemplaza 'nombre_usuario' con el nombre de usuario que deseas probar
---     @inPassword = 'simple123',  -- Reemplaza 'password_usuario' con la contraseña que deseas probar
---     @OutTipoUsuario = @OutTipoUsuario OUTPUT,
---     @OutResultCode = @OutResultCode OUTPUT;
-
--- -- Verificar el código de resultado
--- IF @OutResultCode = 0
--- BEGIN
---     PRINT 'Autenticación exitosa.';
-    
---     -- Comprobar el tipo de usuario
---     IF @OutTipoUsuario = 0
---     BEGIN
---         PRINT 'Usuario administrativo autenticado.';
---     END
---     ELSE IF @OutTipoUsuario = 1
---     BEGIN
---         PRINT 'Tarjetahabiente autenticado.';
---     END
---     ELSE
---     BEGIN
---         PRINT 'Tipo de usuario desconocido.';
---     END
--- END
--- ELSE
--- BEGIN
---     PRINT 'Error en la autenticación.';
--- END
--- GO
 
 
-ALTER PROCEDURE ObtenerMovimientosPorTarjetaFisica
-    @inCodigoTarjetaFisica VARCHAR(64)
+
+
+
+
+--es este
+ALTER PROCEDURE [dbo].[ObtenerEstadoCuenta]
+    @IdTCM VARCHAR(64),
+    @OutResultCode INT OUTPUT
 AS
 BEGIN
-    SET NOCOUNT ON;
+    BEGIN TRY
 
-    -- Consulta para obtener los movimientos de la tarjeta física
-    SELECT 
-        M.FechaMovimiento AS [Fecha de Operación],
-        M.Nombre AS [Nombre de Tipo de Movimiento], -- Mantenemos el nombre directamente desde Movimiento
-        M.Descripcion AS [Descripción],
-        M.Referencia,
-        M.Monto,
-        -- Cálculo del nuevo saldo acumulado
-        SUM(M.Monto) OVER (PARTITION BY M.idTF ORDER BY M.FechaMovimiento ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS [Nuevo Saldo]
-    FROM Movimiento M
-    INNER JOIN TF ON M.idTF = TF.id
-    WHERE TF.CodigoTC = @inCodigoTarjetaFisica -- Filtro por el código de la tarjeta física
-    ORDER BY M.FechaMovimiento ASC; -- Orden por fecha
-END;
-GO
+    BEGIN TRANSACTION
 
--- SELECT * FROM Movimiento
--- SELECT * FROM TF
-
-CREATE PROCEDURE ObtenerEstadoCuenta
-    @idTCM INT
-AS
-BEGIN
     SELECT
         EC.FechaCorte,
         EC.PagoMinimo,
@@ -424,9 +428,74 @@ BEGIN
         EC.CantidadOperacionesATM,
         EC.CantidadOperacionesVentanilla
     FROM EstadoCuenta EC
-    WHERE idTCM = @idTCM
+    WHERE EC.idTCM = @idTCM
     ORDER BY EC.FechaCorte DESC;
-END;
 
-EXEC ObtenerEstadoCuenta @idTCM = 1;
-SELECT * FROM EstadoCuenta
+    COMMIT TRANSACTION
+
+    END TRY
+    BEGIN CATCH
+        -- Rollback en caso de error
+        IF @@TRANCOUNT > 0 
+        BEGIN
+            ROLLBACK TRANSACTION;
+        END;
+        
+        -- Asignar el código de error de la base de datos al resultado de salida
+        SET @OutResultCode = 50008;
+
+        -- Registrar el error en la tabla DBError
+        INSERT INTO [sistemaTarjetaCredito].[dbo].[DBError]
+        (
+            ErrorUsername,
+            ErrorNumber,
+            ErrorState,
+            ErrorSeverity,
+            ErrorLine,
+            ErrorProcedure,
+            ErrorMessage,
+            ErrorDateTime
+        )
+        VALUES
+        (
+            SUSER_NAME(),
+            ERROR_NUMBER(),
+            ERROR_STATE(),
+            ERROR_SEVERITY(),
+            ERROR_LINE(),
+            ERROR_PROCEDURE(),
+            ERROR_MESSAGE(),
+            GETDATE()
+        );
+    END CATCH
+END;
+GO
+
+/****** Object:  StoredProcedure [dbo].[ObtenerMovimientosPorTarjetaFisica]    Script Date: 20/11/2024 01:23:28 ******/
+-- SET ANSI_NULLS ON
+-- GO
+-- SET QUOTED_IDENTIFIER ON
+-- GO
+
+-- CREATE PROCEDURE [dbo].[ObtenerMovimientosEstadoCuenta]
+--     @OutResultCode INT OUTPUT
+-- AS
+-- BEGIN
+--     SET NOCOUNT ON;
+
+--     -- Consulta para obtener los movimientos de la tarjeta física
+--     SELECT 
+--         M.FechaMovimiento AS [Fecha de Operación],
+--         M.Nombre AS [Nombre de Tipo de Movimiento], -- Mantenemos el nombre directamente desde Movimiento
+--         M.Descripcion AS [Descripción],
+--         M.Referencia,
+--         M.Monto,
+--         -- Cálculo del nuevo saldo acumulado
+--         SUM(M.Monto) OVER (PARTITION BY M.idTF ORDER BY M.FechaMovimiento ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS [Nuevo Saldo]
+--     FROM Movimiento M
+--     INNER JOIN TF ON M.idTF = TF.id
+--     WHERE TF.CodigoTC = @inCodigoTarjetaFisica -- Filtro por el código de la tarjeta física
+--     ORDER BY M.FechaMovimiento ASC; -- Orden por fecha
+-- END;
+-- GO
+

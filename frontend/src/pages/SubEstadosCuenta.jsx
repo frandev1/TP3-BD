@@ -4,10 +4,7 @@ import axios from "axios";
 import PropTypes from 'prop-types';
 
 
-
-
-
-function EstadosCuenta() {
+function SubEstadoCuenta() {
     const [estadoCuenta, setEstadoCuenta] = useState([]);
     const [error, setError] = useState(null);
 
@@ -65,12 +62,4 @@ function EstadosCuenta() {
     );
 }
 
-
-EstadosCuenta.propTypes = {
-    tarjeta: PropTypes.shape({
-        codigoTarjeta: PropTypes.string.isRequired,
-        tipoTC: PropTypes.string.isRequired
-    })
-};
-
-export default EstadosCuenta;
+export default SubEstadoCuenta;

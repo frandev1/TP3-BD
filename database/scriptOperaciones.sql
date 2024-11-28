@@ -8,8 +8,7 @@ SELECT @XmlData = CONVERT(XML, BULKColumn)
 FROM OPENROWSET(BULK 'C:\TEC\BasesDatos1\TP3-BD\OperacionesFinal.xml', SINGLE_CLOB) AS x;
 
 DECLARE @FechaActual DATE;
-DECLARE @Contador INT;
-DECLARE @LargoFecha INT;
+DECLARE @UltimaFecha DATE;
 
 DECLARE @Fecha TABLE(
     id INT IDENTITY(1,1),
@@ -22,8 +21,15 @@ SELECT DISTINCT
 FROM 
     @XmlData.nodes('/root/fechaOperacion') AS T(C);
 
-SELECT @LargoFecha = (SELECT COUNT(*) FROM @XmlData.nodes('/root/fechaOperacion') AS x1(Datos));
-SET @Contador = 1;
+SELECT
+	@FechaActual = MIN(Fecha)
+FROM @Fecha
+
+SELECT
+	@UltimaFecha = MAX(Fecha)
+FROM @Fecha
+
+PRINT 'PRIMERA FECHA:' + CONVERT(VARCHAR, @FechaActual) + ' UltimaFecha:' + CONVERT(VARCHAR, @UltimaFecha)
 
 DECLARE @RRP TABLE(
     id INT IDENTITY(1,1), -- Identificador único
@@ -41,9 +47,8 @@ FROM
     @XmlData.nodes('/root/fechaOperacion') AS Fecha(C)
     CROSS APPLY Fecha.C.nodes('RenovacionRoboPerdida/RRP') AS T(C);
 
-WHILE @Contador <= @LargoFecha
+WHILE @FechaActual <= @UltimaFecha
 BEGIN
-    SELECT @FechaActual = Fecha FROM @Fecha WHERE id = @Contador;
     PRINT 'Procesando fecha: ' + CONVERT(VARCHAR, @FechaActual);
 
     -- Inserción en tabla TH (ejemplo)
@@ -117,7 +122,8 @@ BEGIN
 				SELECT MIT.id
 				FROM MIT MIT
 				WHERE MIT.Nombre = RRP.Razon
-			)
+			),
+            FechaInvalidacion = @FechaActual
 		FROM @RRP RRP
 		WHERE Codigo = RRP.TF AND RRP.FechaReporte = @FechaActual
 
@@ -127,6 +133,14 @@ BEGIN
     BEGIN
         PRINT 'No se encontraron datos de RP para la fecha: ' + CONVERT(VARCHAR, @FechaActual);
     END;
+
+	UPDATE TF
+	SET
+		EsActiva = 0,
+		idMotivoInvalidacion = 3,
+		FechaInvalidacion = @FechaActual
+	WHERE FechaVencimiento = @FechaActual AND EsActiva = 1
+
         
     INSERT INTO Movimiento (Nombre, idTF, FechaMovimiento, Monto, Descripcion, Referencia, EsSospechoso)
     SELECT
@@ -200,7 +214,32 @@ BEGIN
         AND RN.Nombre = 'Cantidad de dias para pago saldo de contado'
     WHERE EC.FechaCorte = @FechaActual;
 
-    SET @Contador = @Contador + 1;
+	INSERT INTO  [dbo].[SubEstadoCuenta]
+        ([idTCA]
+        ,[FechaCorte]
+        ,[CantidadOperacionesATM]
+        ,[CantidadOperacionesVentanilla]
+        ,[SumaCompras]
+        ,[CantidadCompras]
+        ,[SumaRetiros]
+        ,[CantidadRetiros]
+        ,[SumaCreditos]
+        ,[SumaDebitos])
+    SELECT
+        SEC.idTCA
+		, DATEADD(MONTH, 1, @FechaActual)
+        , 0
+        , 0
+        , 0
+        , 0
+        , 0
+        , 0
+        , 0
+        , 0
+    FROM SubEstadoCuenta SEC
+	WHERE SEC.FechaCorte = @FechaActual;
+
+    SET @FechaActual = DATEADD(DAY, 1, @FechaActual);
 END;
 
 -- Verificar si el bucle terminó

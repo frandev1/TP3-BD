@@ -33,11 +33,16 @@ function UA() {
         });
     }, [user?.nombre]);
 
-    const handleMovimientos = (codigoTarjeta) => {
+    const handleClick = (TipoCuenta, codigoTarjeta,) => {
         const tarjeta = {
+            tipoCuenta: TipoCuenta,
             codigoTarjeta: codigoTarjeta
           }
-        return navigate('/movimientos', { state: { tarjeta } })
+        if (TipoCuenta == 'TCM') {
+            return navigate('/estadoscuenta', { state: { tarjeta } })
+        }
+        if (TipoCuenta =='TCA')
+            return navigate('/subestadoscuenta', { state: { tarjeta } })
     } 
 
     return (
@@ -56,30 +61,23 @@ function UA() {
                                     <tr>
                                         <th>Tipo de Tarjeta</th>
                                         <th>Código de Tarjeta</th>
-                                        <th>Código de Tarjeta física</th>
-                                        <th>Nombre del Usuario TH</th>
-                                        <th>Movimientos</th>
+                                        <th>Tarjeta Habiente</th>
+                                        <th>Fecha Vencimiento</th>
+                                        <th>Estado Tarjeta</th>
                                         <th>Estado de Cuenta</th>
                                     </tr>
                                 </thead>
                                 <tbody className='table-group-divider'>
                                     {tarjetas?.map((tarjeta, index) => (
                                         <tr key={index}>
-                                            <td>{tarjeta.TipoTarjeta}</td>
-                                            <td>{tarjeta.CodigoTarjeta}</td>
-                                            <td>{tarjeta.CodigoTarjetaFisica}</td>
-                                            <td>{tarjeta.NombreTarjetahabiente}</td>
+                                            <td>{tarjeta.TipoCuenta}</td>
+                                            <td>{tarjeta.NumeroTarjeta}</td>
+                                            <td>{tarjeta.NombreTH}</td>
+                                            <td>{tarjeta.FechaVencimiento}</td>
+                                            <td>{tarjeta.EstadoCuenta}</td>
                                             <td>
-                                                <button
-                                                    onClick={() => handleMovimientos(tarjeta.CodigoTarjeta)}
-                                                    className='btn btn-success'
-                                                >
-                                                    <i className='fa-solid fa-clipboard'></i>
-                                                </button>
-                                                
-                                            </td>
-                                            <td>
-                                                <button className='btn btn-warning'>
+                                                <button className='btn btn-success'
+                                                    onClick={(e) => handleClick(e.target.TipoCuenta, e.target.NumeroTarjeta)}>
                                                     <i className='fa-solid fa-file-invoice-dollar'></i>
                                                 </button>
                                             </td>

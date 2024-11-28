@@ -129,3 +129,33 @@ export const getMovimientosPorTarjetaFisica = async (req, res) => {
     }
 };
 
+export const getEstadoCuenta = async (req, res) => {
+    const { IdTCM } = req.params;
+
+    try {
+        // Obtener conexión a la base de datos
+        const pool = await getConnection();
+
+        // Ejecutar el procedimiento almacenado
+        const result = await pool
+            .request()
+            .input("IdTCM", sql.VarChar(64), IdTCM)     
+            .output("OutResultCode", sql.Int)             
+            .execute("ObtenerEstadoCuenta");              
+
+        const outputResultCode = result.output.OutResultCode;
+
+        // Validar si hubo errores en el procedimiento almacenado
+        if (outputResultCode && outputResultCode !== 0) {
+            return res.status(500).json({
+                error: "Error al obtener el estado de cuenta",
+                resultCode: outputResultCode,
+            });
+        }
+        // Enviar los resultados al cliente
+        res.json(result.recordset);
+    } catch (error) {
+        console.error("Error al ejecutar el SP ObtenerEstadoCuenta:", error.message);
+        res.status(500).json({ error: "Error interno del servidor." });
+    }
+};

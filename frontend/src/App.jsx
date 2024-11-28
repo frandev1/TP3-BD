@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { LoginForm, UA, TH, Movimientos } from './pages/'
+import { LoginForm, UA, TH, Movimientos, EstadoCuenta, SubEstadoCuenta } from './pages/'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle';
@@ -23,6 +23,14 @@ function App() {
         <Route
           path='movimientos'
           element={<Movimientos />}
+        />
+        <Route
+          path='estadoscuenta'
+          element={<EstadoCuenta />}
+        />
+        <Route
+          path='subestadoscuenta'
+          element={<SubEstadoCuenta />}
         />
       </Routes>
     </BrowserRouter>
