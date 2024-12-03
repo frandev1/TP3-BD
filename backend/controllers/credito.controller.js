@@ -40,12 +40,6 @@ export const verificarUsuario = async (req, res) => {
                     msg: 'Contraseña incorrecta' 
                 });
             }
-            else if (result.output.OutResultCode === 50003){
-                res.status(401).json({
-                    authenticated: false,
-                    msg: 'Usuario no encontrado'
-                })
-            }
             else{
                 res.status(402).json({
                     authenticated: false,
@@ -105,9 +99,10 @@ export const obtenerTodasLasTarjetas = async (req, res) => {
 
 
 export const getMovimientosPorTarjetaFisica = async (req, res) => {
-    const codigoTarjeta = req.params.codigoTarjetaFisica;
-    console.log("Código de tarjeta recibido:", codigoTarjeta);
-
+    const { codigoTarjeta, tipoCuenta, fechaCorte } = req.params;
+    console.log("Codigo Tarjeta: ", codigoTarjeta);
+    console.log("Tipo Cuenta: ", tipoCuenta);
+    console.log("Fecha Corte: ", fechaCorte);
 
     try {
         // Obtenemos la conexión
@@ -116,11 +111,22 @@ export const getMovimientosPorTarjetaFisica = async (req, res) => {
         // Ejecutamos el procedimiento almacenado
         const result = await pool
             .request()
-            .input("inCodigoTarjetaFisica", sql.BigInt, codigoTarjeta) // Parametrizamos el input
-            .execute("sistemaTarjetaCredito.dbo.ObtenerMovimientosPorTarjetaFisica"); // Nombre del SP
-            console.log(result.recordset);
+            .input("inCodigoTC", sql.VarChar(50), codigoTarjeta) // Parametrizamos el input
+            .input("inTipoTC", sql.VarChar(50), tipoCuenta)
+            .input("inFechaCorte", sql.Date, fechaCorte)
+            .output("OutResultCode", sql.Int, 0)
+            .execute("sistemaTarjetaCredito.dbo.ObtenerMovimientos"); // Nombre del SP
+        
+        console.log(result.recordset);
 
+        const outputResultCode = result.output.OutResultCode;
 
+        if (outputResultCode && outputResultCode !== 0) {
+            return res.status(500).json({
+                error: "Error al obtener el estado de cuenta",
+                resultCode: outputResultCode,
+            });
+        }
         // Enviamos los resultados
         res.json(result.recordset); // Enviamos solo el recordset al cliente
     } catch (error) {
@@ -130,7 +136,10 @@ export const getMovimientosPorTarjetaFisica = async (req, res) => {
 };
 
 export const getEstadoCuenta = async (req, res) => {
-    const { IdTCM } = req.params;
+    const { codigoTarjeta, tipoCuenta } = req.params;
+
+    console.log("Codigo Tarjeta: ", codigoTarjeta);
+    console.log("Tipo Cuenta: ", tipoCuenta);
 
     try {
         // Obtener conexión a la base de datos
@@ -139,9 +148,10 @@ export const getEstadoCuenta = async (req, res) => {
         // Ejecutar el procedimiento almacenado
         const result = await pool
             .request()
-            .input("IdTCM", sql.VarChar(64), IdTCM)     
-            .output("OutResultCode", sql.Int)             
-            .execute("ObtenerEstadoCuenta");              
+            .input("InCodigoTF", sql.VarChar(64), codigoTarjeta)     
+            .input("InTipoTF", sql.VarChar(4), tipoCuenta)
+            .output("OutResultCode", sql.Int, 0)             
+            .execute("sistemaTarjetaCredito.dbo.ObtenerEstadoCuenta");              
 
         const outputResultCode = result.output.OutResultCode;
 

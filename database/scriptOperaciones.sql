@@ -165,31 +165,50 @@ BEGIN
 		FechaMovimiento, 
 		Monto, 
 		Descripcion, 
-		Referencia
+		Referencia,
+		NuevoSaldo
 	)
 	SELECT
 		TM.id AS idTM,
-		ISNULL(
-			EC.id, -- Caso 1: Cuando el idTCM está disponible directamente
-			EC_TCA.id -- Caso 2: Cuando el idTCA debe derivarse al idTCM
-		) AS idEC,
+		ISNULL(EC.id, EC_TCA.id) AS idEC, -- Prioriza idEC para TCM, luego para TCA
 		TF.id AS idTF,
 		T.C.value('@FechaMovimiento', 'DATE') AS FechaMovimiento,
-		T.C.value('@Monto', 'MONEY') AS Monto,
+		CAST(T.C.value('@Monto', 'DECIMAL(18,2)') AS MONEY) AS Monto,
 		T.C.value('@Descripcion', 'VARCHAR(64)') AS Descripcion,
-		T.C.value('@Referencia', 'VARCHAR(64)') AS Referencia
+		T.C.value('@Referencia', 'VARCHAR(64)') AS Referencia,
+		0
 	FROM 
 		@XmlData.nodes('/root/fechaOperacion') AS Fecha(C)
 		CROSS APPLY Fecha.C.nodes('Movimiento/Movimiento') AS T(C)
 		INNER JOIN TF ON TF.Codigo = T.C.value('@TF', 'VARCHAR(20)') -- Relación con TF
 		INNER JOIN TM ON TM.Nombre = T.C.value('@Nombre', 'VARCHAR(50)') -- Relación con TM
 		LEFT JOIN EstadoCuenta EC ON EC.idTCM = TF.idTCM 
-			AND EC.FechaCorte = @FechaActual -- Relación directa con TCM
-		LEFT JOIN TCA ON TCA.id = TF.idTCA -- Relación con TCA (si TF no tiene idTCM)
+			AND @FechaActual BETWEEN DATEADD(MONTH, -1, EC.FechaCorte) AND EC.FechaCorte
+		LEFT JOIN TCA ON TCA.id = TF.idTCA -- Relación con TCA
 		LEFT JOIN EstadoCuenta EC_TCA ON EC_TCA.idTCM = TCA.idTCM 
-			AND EC_TCA.FechaCorte = @FechaActual -- Relación con EstadoCuenta usando TCA
-	WHERE Fecha.C.value('@Fecha', 'DATE') = @FechaActual;
+			AND @FechaActual BETWEEN DATEADD(MONTH, -1, EC_TCA.FechaCorte) AND EC_TCA.FechaCorte
+	WHERE 
+		Fecha.C.value('@Fecha', 'DATE') = @FechaActual;
 
+	UPDATE EstadoCuenta
+		SET
+			EstadoCuenta.PagoContado = EC.PagoMinimo,
+			EstadoCuenta.InteresesCorrientes = EC.SaldoActual / RN.Valor / 100 / 30
+		FROM EstadoCuenta EC
+		INNER JOIN TCM ON TCM.id = EC.idTCM
+		INNER JOIN RN ON RN.Nombre = 'Tasa de interes corriente'
+			AND RN.idTTCM = TCM.idTTCM
+		WHERE @FechaActual BETWEEN DATEADD(MONTH, -1, EC.FechaCorte) AND EC.FechaCorte
+
+	UPDATE EstadoCuenta
+		SET
+			EstadoCuenta.PagoContado = EC.PagoMinimo,
+			EstadoCuenta.InteresesMoratorios = EC.SaldoActual / RN.Valor / 100 / 30
+		FROM EstadoCuenta EC
+		INNER JOIN TCM ON TCM.id = EC.idTCM
+		INNER JOIN RN ON RN.Nombre = 'intereses moratorios'
+			AND RN.idTTCM = TCM.idTTCM
+		WHERE @FechaActual BETWEEN DATEADD(MONTH, -1, EC.FechaCorte) AND EC.FechaCorte
 
     INSERT INTO EstadoCuenta (
         idTCM,
@@ -218,7 +237,7 @@ BEGIN
         EC.idTCM,
         DATEADD(MONTH, 1, @FechaActual) AS FechaCorte, -- Nueva fecha de corte (1 mes después)
         0, -- Saldo inicial
-        0, -- Pago contratado inicial
+        EC.PagoMinimo, -- Pago contratado inicial
         0, -- Pago mínimo inicial
         DATEADD(DAY, CAST(RN.Valor AS int), DATEADD(MONTH, 1, @FechaActual)), -- Nueva fecha de pago (10 días después de la fecha de corte)
         0, -- Intereses corrientes iniciales

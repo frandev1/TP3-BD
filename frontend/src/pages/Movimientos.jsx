@@ -7,14 +7,14 @@ function Movimientos() {
   const api = "http://localhost:5000/api";
   const location = useLocation();
   // const estadoCuenta = location.state?.estadoCuenta;
-  const tarjeta = location.state?.tarjeta;
+  const estado = location.state?.estado;
   const [movimientos, setMovimientos] = useState([]);
 
   useEffect(() => {
     axios
       .get(
         // `${api}/${estadoCuenta?.estadoCuenta}`
-        `${api}/movimientos/${tarjeta.codigoTarjeta}`
+        `${api}/movimientos/${estado.codigoTarjeta}/${estado.tipoCuenta}/${estado.fechaCorte}`
       )
       .then(function (respuesta) {
         setMovimientos(respuesta.data); // Guardar los datos de las tarjetas en el estado
@@ -25,15 +25,14 @@ function Movimientos() {
           error.response?.data?.msg || "Error al obtener los movimientos"
         );
       });
-  }, [tarjeta, tarjeta?.codigoTarjeta]);
-  // }, [estadoCuenta?.estadoCuenta])
+  }, [estado]);
 
   return (
     <div>
       <div className="container-fluid">
         <div className="row">
           <div className="col-12">
-            {/* <h2 className="text-bg-light p-3"></h2> */}
+            <h2 className="text-bg-light p-3">Movimientos</h2>
           </div>
         </div>
         <div className="row mt-3">
@@ -53,12 +52,12 @@ function Movimientos() {
                 <tbody className="table-group-divider">
                   {movimientos?.map((mov, index) => (
                     <tr key={index}>
-                      <td>{mov["Fecha de Operación"]}</td>
-                      <td>{mov["Nombre de Tipo de Movimiento"]}</td>
-                      <td>{mov.Descripción}</td>
+                      <td>{mov.FechaMovimiento}</td>
+                      <td>{mov.Nombre}</td>
+                      <td>{mov.Descripcion}</td>
                       <td>{mov.Referencia}</td>
                       <td>{mov.Monto}</td>
-                      <td>{mov["Nuevo Saldo"]}</td>
+                      <td>{mov.NuevoSaldo}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -73,7 +72,9 @@ function Movimientos() {
 
 Movimientos.propTypes = {
     tarjeta: PropTypes.shape({
+        tipoCuenta: PropTypes.string.isRequired,
         codigoTarjeta: PropTypes.string.isRequired,
+        fechaCorte: PropTypes.string.isRequired
     })
 };
 

@@ -10,9 +10,9 @@ router.post('/th', tarjetasTH);
 router.post('/tarjetasUA', obtenerTodasLasTarjetas);
 
 // Ruta para obtener movimientos de una tarjeta física
-router.get('/movimientos/:codigoTarjetaFisica', getMovimientosPorTarjetaFisica);
+router.get('/movimientos/:codigoTarjeta/:tipoCuenta/:fechaCorte', getMovimientosPorTarjetaFisica);
 
 // Ruta para obtener el estado de cuenta
-router.get('/estadoCuenta/:codigoTF/:tipoTC', getEstadoCuenta);
+router.get('/estadoCuenta/:codigoTarjeta/:tipoCuenta', getEstadoCuenta);
 
 export default router;

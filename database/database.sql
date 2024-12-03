@@ -112,6 +112,7 @@ CREATE TABLE [dbo].[Movimiento](
 	[Monto] [money] NOT NULL,
 	[Descripcion] [varchar](64) NOT NULL,
 	[Referencia] [varchar](64) NOT NULL,
+	[NuevoSaldo] [money] NULL
  CONSTRAINT [PK_Movimiento] PRIMARY KEY CLUSTERED 
 (
 	[id] ASC

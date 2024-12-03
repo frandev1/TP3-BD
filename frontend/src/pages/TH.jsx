@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import axios from 'axios';
 
@@ -8,6 +8,7 @@ function TH() {
     const location = useLocation();
     const user = location.state?.user;
     const api = 'http://localhost:5000/api';
+    const navigate = useNavigate();
     const [tarjetas, setTarjetas] = useState([]);
 
     useEffect(() => {
@@ -30,6 +31,19 @@ function TH() {
             console.error(error.response?.data?.msg || "Error al obtener las tarjetas");
         });
     }, [user?.userName, user?.nombre]);
+
+    const handleClick = (TipoCuenta, codigoTarjeta) => {
+        const tarjeta = {
+            tipoCuenta: TipoCuenta,
+            codigoTarjeta: codigoTarjeta
+          }
+        console.log(TipoCuenta)
+        if (TipoCuenta == 'TCM') {
+            return navigate('/estadoscuenta', { state: { tarjeta } })
+        }
+        if (TipoCuenta =='TCA')
+            return navigate('/subestadoscuenta', { state: { tarjeta } })
+    } 
 
     return (
         <div>
@@ -60,7 +74,7 @@ function TH() {
                                             <td>{tarjeta.TipoCuenta}</td>
                                             <td>{tarjeta.FechaVencimiento}</td>
                                             <td>
-                                                <button /*onClick={()=>} */
+                                                <button onClick={()=> handleClick(tarjeta.TipoCuenta, tarjeta.NumeroTarjeta)}
                                                     className='btn btn-success' data-bs-toggle='modal' data-bs-target='#modal'>
                                                         <i className='fa-solid fa-clipboard'></i>
                                                 </button>

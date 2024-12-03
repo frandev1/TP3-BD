@@ -33,11 +33,12 @@ function UA() {
         });
     }, [user?.nombre]);
 
-    const handleClick = (TipoCuenta, codigoTarjeta,) => {
+    const handleClick = (TipoCuenta, codigoTarjeta) => {
         const tarjeta = {
             tipoCuenta: TipoCuenta,
             codigoTarjeta: codigoTarjeta
           }
+        console.log(TipoCuenta)
         if (TipoCuenta == 'TCM') {
             return navigate('/estadoscuenta', { state: { tarjeta } })
         }
@@ -77,7 +78,7 @@ function UA() {
                                             <td>{tarjeta.EstadoCuenta}</td>
                                             <td>
                                                 <button className='btn btn-success'
-                                                    onClick={(e) => handleClick(e.target.TipoCuenta, e.target.NumeroTarjeta)}>
+                                                    onClick={() => handleClick(tarjeta.TipoCuenta, tarjeta.NumeroTarjeta)}>
                                                     <i className='fa-solid fa-file-invoice-dollar'></i>
                                                 </button>
                                             </td>

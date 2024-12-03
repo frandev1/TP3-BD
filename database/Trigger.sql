@@ -591,6 +591,7 @@ BEGIN
 						WHEN TM.AcumulaOperacionesATM = 1 THEN 1 
 						ELSE 0 
 					END,
+				EC.PagoMinimo = EC.SaldoActual / RN.Valor,
 				EC.CantidadOperacionesVentanilla = EC.CantidadOperacionesVentanilla + 
 					CASE 
 						WHEN TM.AcumulaOperacionesVentana = 1 THEN 1 
@@ -632,7 +633,9 @@ BEGIN
 			FROM EstadoCuenta EC
 				INNER JOIN TCM ON EC.idTCM = TCM.id AND TCM.id = @idTC
 				INNER JOIN TM ON TM.Nombre = @NombreMovimiento
-			WHERE DATEDIFF(MONTH, @FechaMovimiento, EC.FechaCorte) BETWEEN 0 AND 1;
+				INNER JOIN RN ON RN.Nombre = 'Cantidad de cuotas para pago minimo' AND
+					RN.idTTCM = TCM.idTTCM
+			WHERE @FechaMovimiento BETWEEN DATEADD(MONTH, -1, EC.FechaCorte) AND EC.FechaCorte;
 		END
 
 		-- Actualización en SubEstadoCuenta (para tarjetas adicionales - TCA)
@@ -646,6 +649,7 @@ BEGIN
 						WHEN TM.Accion = 'Credito' THEN @Monto
 						ELSE 0
 					END,
+				EC.PagoMinimo = EC.SaldoActual / RN.Valor,
 				EC.CantidadOperacionesATM = EC.CantidadOperacionesATM + 
 					CASE 
 						WHEN TM.AcumulaOperacionesATM = 1 THEN 1 
@@ -692,7 +696,10 @@ BEGIN
 			FROM EstadoCuenta EC
 				INNER JOIN TCA ON EC.idTCM = TCA.idTCM AND TCA.id = @idTC
 				INNER JOIN TM ON TM.Nombre = @NombreMovimiento
-			WHERE DATEDIFF(MONTH, @FechaMovimiento, EC.FechaCorte) BETWEEN 0 AND 1;
+				INNER JOIN TCM ON TCM.id = TCA.idTCM
+				INNER JOIN RN ON RN.Nombre = 'Cantidad de cuotas para pago minimo' AND
+					RN.idTTCM = TCM.idTTCM
+			WHERE @FechaMovimiento BETWEEN DATEADD(MONTH, -1, EC.FechaCorte) AND EC.FechaCorte;
 
 			UPDATE SEC
 			SET 
@@ -722,7 +729,7 @@ BEGIN
 			FROM SubEstadoCuenta SEC
 				INNER JOIN TM ON TM.Nombre = @NombreMovimiento
 				INNER JOIN TCA ON TCA.id = @idTC AND SEC.idTCA = TCA.id
-			WHERE DATEDIFF(MONTH, @FechaMovimiento, SEC.FechaCorte) BETWEEN 0 AND 1;
+			WHERE @FechaMovimiento BETWEEN DATEADD(MONTH, -1, SEC.FechaCorte) AND SEC.FechaCorte;
 		END
 		SET @Contador = @Contador + 1;
 	END

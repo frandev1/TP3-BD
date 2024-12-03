@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-ALTER PROCEDURE [dbo].[ObtenerEstadoCuenta]
+CREATE PROCEDURE [dbo].[ObtenerEstadoCuenta]
     @InCodigoTF VARCHAR(64),
     @InTipoTF VARCHAR(4),
     @OutResultCode INT OUTPUT
@@ -11,31 +11,23 @@ AS
 BEGIN
     BEGIN TRY
 
-    DECLARE @idTC INT;
-
-    BEGIN TRANSACTION
-
     SET @OutResultCode = 0;
+
+	DECLARE @idTC INT;
 
     IF (@InTipoTF = 'TCM')
     BEGIN 
-
-        SELECT
-            @idTC = TCM.id
-        FROM TCM
-        INNER JOIN TF ON TF.Codigo = @InCodigoTF
-        WHERE TCM.Codigo = TF.CodigoTC;
-
         SELECT
             EC.FechaCorte,
             EC.PagoMinimo,
-            EC.PagoContratado,
+            EC.PagoContado,
             EC.InteresesCorrientes,
             EC.InteresesMoratorios,
             EC.CantidadOperacionesATM,
             EC.CantidadOperacionesVentanilla
         FROM EstadoCuenta EC
-        WHERE EC.idTCM = @idTC
+        INNER JOIN TF ON TF.Codigo = @InCodigoTF
+        WHERE EC.idTCM = TF.idTCM
         ORDER BY EC.FechaCorte DESC;
     END
     
@@ -46,7 +38,7 @@ BEGIN
             @idTC = TCA.id
         FROM TCA
         INNER JOIN TF ON TF.Codigo = @InCodigoTF
-        WHERE TCA.Codigo = TF.CodigoTC;
+        WHERE TCA.Codigo = TF.idTCA;
         
         SELECT
             SEC.FechaCorte,
@@ -55,14 +47,12 @@ BEGIN
             SEC.CantidadCompras,
             SEC.SumaCompras,
             SEC.CantidadRetiros,
-            SEC.CantidadRetiros
+            SEC.SumaRetiros
         FROM SubEstadoCuenta SEC
         INNER JOIN TF ON TF.Codigo = @InCodigoTF
-        WHERE SEC.idTCA = @idTC
+        WHERE SEC.idTCA = TF.idTCA
         ORDER BY SEC.FechaCorte DESC;
     END
-
-    COMMIT TRANSACTION
 
     END TRY
     BEGIN CATCH
@@ -112,64 +102,56 @@ CREATE PROCEDURE [dbo].[ObtenerTarjetasAsociadasTH]
 AS
 BEGIN
     SET NOCOUNT ON;
+
     BEGIN TRY
-        -- Se inicializa la variable de salida
+        
         SET @OutResultCode = 0;
 
         DECLARE @idTH INT;
-        DECLARE @idUsuario INT;
 
-        -- Obtener el id del tarjetahabiente
+        -- Obtener el id del tarjetahabiente (TH) basado en el nombre de usuario
         SELECT @idTH = TH.id
-        FROM [sistemaTarjetaCredito].[dbo].[TH] TH
-        WHERE NombreUsuario = @inUsuarioTH;
+        FROM [dbo].[TH] TH
+        INNER JOIN [dbo].[Usuario] U ON TH.idUsuario = U.id
+        WHERE U.Username = @inUsuarioTH;
 
-        -- Verificar que el id se obtuvo correctamente
+        -- Verificar si el tarjetahabiente existe
         IF @idTH IS NULL
         BEGIN
-            SET @OutResultCode = 50002;  -- Código de error para usuario no encontrado
+            SET @OutResultCode = 50002;  
             RAISERROR('Usuario no encontrado.', 16, 1);
             RETURN;
-        END
+        END;
 
-        -- Seleccionar solo las tarjetas asociadas al tarjetahabiente específico (TH)
+        
         SELECT DISTINCT
-            TF.Codigo AS NumeroTarjeta,  -- Código de la tarjeta
+            TF.Codigo AS NumeroTarjeta,        
             CASE
                 WHEN TF.EsActiva = 1 THEN 'Activa'
-                WHEN TF.EsActiva = 0 THEN 'Inactiva'
-            END AS EstadoCuenta,
-            TF.FechaVencimiento,
-            CASE 
-                WHEN TCA.id IS NOT NULL THEN 'TCA'
-                WHEN TCM.id IS NOT NULL THEN 'TCM'
+                ELSE 'Inactiva'
+            END AS EstadoCuenta,               
+            TF.FechaVencimiento,               
+            CASE
+                WHEN TF.idTCA IS NOT NULL THEN 'TCA'
+                WHEN TF.idTCM IS NOT NULL THEN 'TCM'
                 ELSE NULL
-            END AS TipoCuenta,
-            TF.FechaCreacion
-        FROM 
-            [sistemaTarjetaCredito].[dbo].[TF] TF
-        LEFT JOIN TCA TCA ON TF.CodigoTC = TCA.Codigo AND TCA.idTH = @idTH -- Unir con TCA asegurando el idTH
-        LEFT JOIN TCM TCM ON TF.CodigoTC = TCM.Codigo AND TCM.idTH = @idTH -- Unir con TCM asegurando el idTH
-        WHERE 
-            TCA.idTH = @idTH OR TCM.idTH = @idTH 
-        ORDER BY 
-            TF.FechaCreacion DESC;
-        
+            END AS TipoCuenta,                 
+            TF.FechaCreacion                   
+        FROM [dbo].[TF] TF
+        LEFT JOIN [dbo].[TCA] TCA ON TF.idTCA = TCA.id AND TCA.idTH = @idTH
+        LEFT JOIN [dbo].[TCM] TCM ON TF.idTCM = TCM.id AND TCM.idTH = @idTH
+        WHERE TCA.idTH = @idTH OR TCM.idTH = @idTH
+        ORDER BY TF.FechaCreacion DESC;
+
     END TRY
     BEGIN CATCH
-        -- Rollback en caso de error
-        IF @@TRANCOUNT > 0 
-        BEGIN
-            ROLLBACK TRANSACTION;
-        END;
         
-        -- Asignar el código de error de la base de datos al resultado de salida
         SET @OutResultCode = 50008;
 
-        -- Registrar el error en la tabla DBError
-        INSERT INTO [sistemaTarjetaCredito].[dbo].[DBError]
+        
+        INSERT INTO [dbo].[DBError]
         (
-            ErrorUsername,
+            ErrorUserName,
             ErrorNumber,
             ErrorState,
             ErrorSeverity,
@@ -189,14 +171,12 @@ BEGIN
             ERROR_MESSAGE(),
             GETDATE()
         );
-
-        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
-        RAISERROR(@ErrorMessage, 16, 1);
-    END CATCH
+    END CATCH;
 
     SET NOCOUNT OFF;
 END;
 GO
+
 /****** Object:  StoredProcedure [dbo].[ObtenerTodasLasTarjetas]    Script Date: 20/11/2024 01:23:28 ******/
 SET ANSI_NULLS ON
 GO
@@ -210,14 +190,14 @@ BEGIN
     SET NOCOUNT ON;
 
     BEGIN TRY
-        -- Verificar si el usuario es administrador (cambiado para reflejar la nueva estructura de `UA` si aplica)
+        -- Verificar si el usuario es administrador
         IF EXISTS (
             SELECT 1
-            FROM UA  -- Asegúrate de que `UA` existe y contiene los nombres de usuario
-            WHERE Username = @inNombreUsuario
+            FROM Usuario
+            WHERE Username = @inNombreUsuario AND TipoUsuario = 1
         )
         BEGIN
-            -- Selección de tarjetas TCM y TCA unidas con TF y TH según la nueva estructura
+            -- Seleccionar información de las tarjetas
             SELECT
                 TF.Codigo AS NumeroTarjeta,
                 CASE
@@ -225,17 +205,17 @@ BEGIN
                     ELSE 'Inactiva'
                 END AS EstadoCuenta,
                 CASE
-                    WHEN TCA.id IS NOT NULL THEN 'TCA'
-                    WHEN TCM.id IS NOT NULL THEN 'TCM'
+                    WHEN TF.idTCA IS NOT NULL THEN 'TCA'
+                    WHEN TF.idTCM IS NOT NULL THEN 'TCM'
                     ELSE NULL
                 END AS TipoCuenta,
                 TF.FechaVencimiento,
-				TH.Nombre AS NombreTH
+                TH.Nombre AS NombreTH
             FROM TF
-            LEFT JOIN TCA ON TCA.Codigo = TF.CodigoTC
-            LEFT JOIN TCM ON TCM.Codigo = TF.CodigoTC
-			LEFT JOIN TH ON TCA.idTH = TH.id OR TCM.idTH = TH.id
-			ORDER BY TF.FechaCreacion DESC;
+            LEFT JOIN TCA ON TF.idTCA = TCA.id
+            LEFT JOIN TCM ON TF.idTCM = TCM.id
+            LEFT JOIN TH ON TCA.idTH = TH.id OR TCM.idTH = TH.id
+            ORDER BY TF.FechaCreacion DESC;
 
             -- Establecer el código de salida exitoso
             SET @OutResultCode = 0;
@@ -275,6 +255,7 @@ BEGIN
     END CATCH
 END;
 GO
+
 /****** Object:  StoredProcedure [dbo].[verificarUsuario]    Script Date: 20/11/2024 01:23:28 ******/
 SET ANSI_NULLS ON
 GO
@@ -297,63 +278,28 @@ BEGIN
         SET @OutTipoUsuario = NULL;
         SET @OutNombre = NULL;
 
-        -- Verificar si el nombre de usuario existe en la tabla UA
         IF EXISTS (
-            SELECT 1 
-            FROM [sistemaTarjetaCredito].[dbo].[UA] UA 
-            WHERE UA.Username = @inNombre
+            SELECT 1
+            FROM [sistemaTarjetaCredito].[dbo].[Usuario] U
+            WHERE U.Username = @inNombre
+            AND U.Password = @inPassword
         )
         BEGIN
-            -- Si el nombre existe, verificar la contraseña
-            IF EXISTS (
-                SELECT 1 
-                FROM [sistemaTarjetaCredito].[dbo].[UA] UA 
-                WHERE UA.Username = @inNombre 
-                AND UA.Password = @inPassword
-            )
-            BEGIN
-                -- Credenciales correctas para un usuario administrativo
-                SET @OutTipoUsuario = 0;
-            END
-            ELSE
-            BEGIN
-                -- Contraseña incorrecta para un usuario administrativo
-                SET @OutResultCode = 50002; -- Código para contraseña incorrecta
-            END
-        END
-        ELSE IF EXISTS (
-            -- Verificar si el nombre de usuario existe en la tabla TH
-            SELECT 1 
-            FROM [sistemaTarjetaCredito].[dbo].[TH] TH 
-            WHERE TH.NombreUsuario = @inNombre
-        )
-        BEGIN
-            -- Si el nombre existe, verificar la contraseña
-            IF EXISTS (
-                SELECT 1 
-                FROM [sistemaTarjetaCredito].[dbo].[TH] TH 
-                WHERE TH.NombreUsuario = @inNombre 
-                AND TH.Password = @inPassword
-            )
-            BEGIN
-                -- Credenciales correctas para un tarjetahabiente
-                SET @OutTipoUsuario = 1;
-
-                -- Devuelve opcionalmente el nombre del usuario
-                SELECT @OutNombre = TH.Nombre
-                FROM [sistemaTarjetaCredito].[dbo].[TH]
-                WHERE TH.NombreUsuario = @inNombre;
-            END
-            ELSE
-            BEGIN
-                -- Contraseña incorrecta para un tarjetahabiente
-                SET @OutResultCode = 50002; -- Código para contraseña incorrecta
-            END
+            SELECT
+                @OutTipoUsuario = 
+                    CASE
+                        WHEN U.TipoUsuario = 0 THEN 1
+                        WHEN U.TipoUsuario = 1 THEN 0
+                    END,
+                @OutNombre = TH.Nombre
+            FROM [sistemaTarjetaCredito].[dbo].[Usuario] U
+            LEFT JOIN TH ON TH.idUsuario = U.id
+            WHERE U.Username = @inNombre
+            AND U.Password = @inPassword 
         END
         ELSE
         BEGIN
-            -- Usuario no encontrado
-            SET @OutResultCode = 50003; -- Código para usuario no encontrado
+            SET @OutResultCode = 50002
         END
     END TRY
     BEGIN CATCH
@@ -389,53 +335,71 @@ BEGIN
             ERROR_MESSAGE(),
             GETDATE()
         );
-    END CATCH;
-
-    SET NOCOUNT OFF;
-END;
+    END CATCH
+END
 GO
 
-
-
-
-
-
-
-
-
-
-
-
---es este
-ALTER PROCEDURE [dbo].[ObtenerEstadoCuenta]
-    @IdTCM VARCHAR(64),
+/****** Object:  StoredProcedure [dbo].[ObtenerMovimientos]    Script Date: 20/11/2024 01:23:28 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[ObtenerMovimientos] (
+    @inCodigoTC VARCHAR(50),
+    @inTipoTC VARCHAR(50),
+    @inFechaCorte DATE,
     @OutResultCode INT OUTPUT
+)
 AS
 BEGIN
+    SET NOCOUNT ON;
+
     BEGIN TRY
+        SET @OutResultCode = 0;
 
-    SELECT
-        EC.FechaCorte,
-        EC.PagoMinimo,
-        EC.PagoContratado,
-        EC.InteresesCorrientes,
-        EC.InteresesMoratorios,
-        EC.CantidadOperacionesATM,
-        EC.CantidadOperacionesVentanilla
-    FROM EstadoCuenta EC
-    WHERE EC.idTCM = @idTCM
-    ORDER BY EC.FechaCorte DESC;
+        DECLARE @idTC INT;
 
+        -- Buscar el ID de la tarjeta
+        SELECT @idTC = TF.id
+        FROM TF
+        WHERE TF.Codigo = @inCodigoTC;
+
+        -- Movimientos para tarjetas adicionales (TCA)
+        IF (@inTipoTC = 'TCA')
+        BEGIN
+            SELECT
+                M.FechaMovimiento,
+                TM.Nombre,
+                M.Descripcion,
+                M.Referencia,
+                M.Monto,
+                M.NuevoSaldo
+            FROM Movimiento M
+            INNER JOIN TM ON M.idTM = TM.id
+            WHERE M.idTF = @idTC AND 
+			M.FechaMovimiento BETWEEN DATEADD(MONTH, -1, @inFechaCorte) AND @inFechaCorte;
+        END
+
+		-- Movimientos para tarjetas maestras (TCM)
+        IF (@inTipoTC = 'TCM')
+        BEGIN
+            SELECT
+                M.FechaMovimiento,
+                TM.Nombre,
+                M.Descripcion,
+                M.Referencia,
+                M.Monto,
+                M.NuevoSaldo
+            FROM Movimiento M
+            INNER JOIN TM ON M.idTM = TM.id
+            INNER JOIN EstadoCuenta EC ON M.idEC = EC.id
+            WHERE EC.FechaCorte = @inFechaCorte
+                AND EC.idTCM = @idTC; -- Relaciona con el idTC de TCM
+        END
     END TRY
     BEGIN CATCH
-        -- Rollback en caso de error
-        IF @@TRANCOUNT > 0 
-        BEGIN
-            ROLLBACK TRANSACTION;
-        END;
-        
-        -- Asignar el código de error de la base de datos al resultado de salida
-        SET @OutResultCode = 50008;
+        -- Manejo de errores
+        SET @OutResultCode = 50008; -- Código genérico para error
 
         -- Registrar el error en la tabla DBError
         INSERT INTO [sistemaTarjetaCredito].[dbo].[DBError]
@@ -462,7 +426,6 @@ BEGIN
         );
     END CATCH
 END;
-GO
 
 /****** Object:  StoredProcedure [dbo].[ObtenerMovimientosPorTarjetaFisica]    Script Date: 20/11/2024 01:23:28 ******/
 -- SET ANSI_NULLS ON
@@ -491,4 +454,3 @@ GO
 --     ORDER BY M.FechaMovimiento ASC; -- Orden por fecha
 -- END;
 -- GO
-

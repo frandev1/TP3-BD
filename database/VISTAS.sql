@@ -6,7 +6,6 @@ AS
 SELECT 
     TF.id AS TarjetaFisicaID,
     TF.Codigo AS NumeroTarjeta,
-    TF.CodigoTC AS CodigoTarjetaCredito,
     TF.FechaVencimiento,
     TF.FechaCreacion
 FROM dbo.TF
@@ -28,7 +27,7 @@ SELECT
     TF.EsActiva AS TarjetaFisicaActiva
 FROM dbo.TH
 LEFT JOIN dbo.TCM ON TH.id = TCM.idTH
-LEFT JOIN dbo.TF ON TCM.Codigo = TF.CodigoTC;
+LEFT JOIN dbo.TF ON TCM.id = TF.idTCM;
 GO
 
 SELECT * FROM dbo.VistaTarjetahabientesConTarjetas;
