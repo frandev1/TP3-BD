@@ -63,10 +63,11 @@ INSERT INTO TM (
         @XmlData.nodes('/root/TM/TM') AS T(C); 
 	
 -- Insetar datos en UA
-INSERT INTO UA (Username, Password)
+INSERT INTO Usuario (Username, Password, TipoUsuario)
 	SELECT 
 		T.C.value('@Nombre', 'VARCHAR(50)'),
-		T.C.value('@Password', 'VARCHAR(50)')
+		T.C.value('@Password', 'VARCHAR(50)'),
+		1
 	FROM 
 		@XmlData.nodes('/root/UA/Usuario') AS T(C);
 
@@ -91,6 +92,6 @@ SELECT * FROM TRN
 SELECT * FROM RN
 SELECT * FROM MIT
 SELECT * FROM TM
-SELECT * FROM UA
+SELECT * FROM Usuario
 SELECT * FROM TMIC
 SELECT * FROM TMIM

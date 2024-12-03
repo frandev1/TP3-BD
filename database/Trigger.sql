@@ -6,61 +6,96 @@ ON [dbo].[TCM]
 AFTER INSERT
 AS
 BEGIN
-    SET NOCOUNT ON;
-    -- Insertar en EstadoCuenta solo si no existen registros para el mismo idTCM
-    INSERT INTO sistemaTarjetaCredito.dbo.EstadoCuenta
+    SET NOCOUNT OFF;
+	BEGIN TRY
+		BEGIN TRANSACTION
+		-- Insertar en EstadoCuenta solo si no existen registros para el mismo idTCM
+		INSERT INTO sistemaTarjetaCredito.dbo.EstadoCuenta
+			(
+			idTCM,
+			FechaCorte,
+			SaldoActual,
+			PagoContado,
+			PagoMinimo,
+			FechaPago,
+			InteresesCorrientes,
+			InteresesMoratorios,
+			CantidadOperacionesATM,
+			CantidadOperacionesVentanilla,
+			SumaPagosAntesFecha,
+			SumaPagosMes,
+			CantidadPagosMes,
+			CantidadCompras,
+			CantidadRetiros,
+			SumaCompras,
+			SumaRetiros,
+			CantidadCreditos,
+			SumaCreditos,
+			CantidadDebitos,
+			SumaDebitos
+			)
+		SELECT
+			i.id,
+			DATEADD(MONTH, 1, i.FechaCreacion),
+			0,
+			0,
+			0,
+			DATEADD(DAY, RN.Valor, DATEADD(MONTH, 1, i.FechaCreacion)),
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0
+		FROM inserted i
+			INNER JOIN dbo.TH TH ON i.idTH = TH.id
+			INNER JOIN dbo.TTCM TTCM ON i.idTTCM = TTCM.id
+			INNER JOIN dbo.TRN TRN ON TRN.Nombre = 'Cantidad de dias'
+			INNER JOIN dbo.RN RN ON RN.idTRN = TRN.id
+				AND RN.idTTCM = i.idTTCM
+				AND RN.Nombre = 'Cantidad de dias para pago saldo de contado'
+		COMMIT TRANSACTION
+	END TRY
+	BEGIN CATCH
+		-- Rollback en caso de error
+        IF @@TRANCOUNT > 0 
+        BEGIN
+            ROLLBACK TRANSACTION;
+        END;
+
+        -- Registrar el error en la tabla DBError
+        INSERT INTO [sistemaTarjetaCredito].[dbo].[DBError]
         (
-        idTCM,
-        FechaCorte,
-        SaldoActual,
-        PagoContratado,
-        PagoMinimo,
-        FechaPago,
-        InteresesCorrientes,
-        InteresesMoratorios,
-        CantidadOperacionesATM,
-        CantidadOperacionesVentanilla,
-        SumaPagosAntesFecha,
-        SumaPagosMes,
-        CantidadPagosMes,
-        CantidadCompras,
-        CantidadRetiros,
-        SumaCompras,
-        SumaRetiros,
-        CantidadCreditos,
-        SumaCreditos,
-        CantidadDebitos,
-        SumaDebitos
+            ErrorUsername,
+            ErrorNumber,
+            ErrorState,
+            ErrorSeverity,
+            ErrorLine,
+            ErrorProcedure,
+            ErrorMessage,
+            ErrorDateTime
         )
-    SELECT
-        i.id,
-        DATEADD(MONTH, 1, i.FechaCreacion),
-        0,
-        0,
-        0,
-        DATEADD(DAY, RN.Valor, DATEADD(MONTH, 1, i.FechaCreacion)),
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
-    FROM inserted i
-        INNER JOIN dbo.TH TH ON i.idTH = TH.id
-        INNER JOIN dbo.TTCM TTCM ON i.idTTCM = TTCM.id
-        INNER JOIN dbo.TRN TRN ON TRN.Nombre = 'Cantidad de dias'
-        INNER JOIN dbo.RN RN ON RN.idTRN = TRN.id
-            AND RN.idTTCM = i.idTTCM
-            AND RN.Nombre = 'Cantidad de dias para pago saldo de contado'
+        VALUES
+        (
+            SUSER_NAME(),
+            ERROR_NUMBER(),
+            ERROR_STATE(),
+            ERROR_SEVERITY(),
+            ERROR_LINE(),
+            ERROR_PROCEDURE(),
+            ERROR_MESSAGE(),
+            GETDATE()
+        );
+	END CATCH
 END;
 GO
 
@@ -71,33 +106,67 @@ CREATE TRIGGER [dbo].[trInsertTCA]
 	AFTER INSERT
 AS
 BEGIN
-    SET NOCOUNT ON;
-
-    --INSERTA UN ESTADO DE CUENTA POR CADA TARJETA NUEVA
-    INSERT INTO  [dbo].[SubEstadoCuenta]
-        ([idTCA]
-        ,[FechaCorte]
-        ,[CantidadOperacionesATM]
-        ,[CantidadOperacionesVentanilla]
-        ,[SumaCompras]
-		,[CantidadCompras]
-        ,[SumaRetiros]
-        ,[CantidadRetiros]
-        ,[SumaCreditos]
-        ,[SumaDebitos])
-    SELECT
-        I.id
-		, DATEADD(MONTH, 1, T.FechaCreacion)
-        , 0
-        , 0
-        , 0
-        , 0
-        , 0
-        , 0
-        , 0
-		, 0
-    FROM inserted I
-        JOIN TCM T ON T.id = I.id;
+    SET NOCOUNT OFF;
+	BEGIN TRY
+		BEGIN TRANSACTION
+		--INSERTA UN ESTADO DE CUENTA POR CADA TARJETA NUEVA
+		INSERT INTO  [dbo].[SubEstadoCuenta]
+			([idTCA]
+			,[FechaCorte]
+			,[CantidadOperacionesATM]
+			,[CantidadOperacionesVentanilla]
+			,[SumaCompras]
+			,[CantidadCompras]
+			,[SumaRetiros]
+			,[CantidadRetiros]
+			,[SumaCreditos]
+			,[SumaDebitos])
+		SELECT
+			I.id
+			, DATEADD(MONTH, 1, T.FechaCreacion)
+			, 0
+			, 0
+			, 0
+			, 0
+			, 0
+			, 0
+			, 0
+			, 0
+		FROM inserted I
+			JOIN TCM T ON T.id = I.id;
+		
+		COMMIT TRANSACTION
+	END TRY
+	BEGIN CATCH
+		-- Rollback en caso de error
+        IF @@TRANCOUNT > 0 
+        BEGIN
+            ROLLBACK TRANSACTION;
+        END;
+        -- Registrar el error en la tabla DBError
+        INSERT INTO [sistemaTarjetaCredito].[dbo].[DBError]
+        (
+            ErrorUsername,
+            ErrorNumber,
+            ErrorState,
+            ErrorSeverity,
+            ErrorLine,
+            ErrorProcedure,
+            ErrorMessage,
+            ErrorDateTime
+        )
+        VALUES
+        (
+            SUSER_NAME(),
+            ERROR_NUMBER(),
+            ERROR_STATE(),
+            ERROR_SEVERITY(),
+            ERROR_LINE(),
+            ERROR_PROCEDURE(),
+            ERROR_MESSAGE(),
+            GETDATE()
+        );
+	END CATCH
 END
 GO
 
@@ -107,298 +176,321 @@ AFTER UPDATE
 AS
 BEGIN
     SET NOCOUNT ON;
+	BEGIN TRY
+		-- Declaración de variables
+		DECLARE @idTC INT;
+		DECLARE @idTCM INT;
+		DECLARE @NuevoVIN VARCHAR(16);
+		-- El nuevo VIN será un número generado aleatoriamente
+		DECLARE @TipoTC VARCHAR(64);
+		DECLARE @CantidadAnos FLOAT;
+		DECLARE @NuevaFechaVencimiento DATE;
+		DECLARE @FechaInvalidacion DATE;
+		DECLARE @NuevoCCV VARCHAR(4);
+		DECLARE @Largo INT;
+		DECLARE @Contador INT;
+		DECLARE @idMotivoInvalidacion INT;
+		DECLARE @Referencia VARCHAR(64);
 
-    -- Declaración de variables
-    DECLARE @CodigoTC VARCHAR(64);
-    DECLARE @NuevoVIN VARCHAR(16);
-    -- El nuevo VIN será un número generado aleatoriamente
-    DECLARE @TipoTC VARCHAR(64);
-    DECLARE @idTCM INT;
-    -- ID del TCM si aplica
-    DECLARE @CantidadAnos FLOAT;
-    DECLARE @NuevaFechaVencimiento DATE;
-    DECLARE @FechaInvalidacion DATE;
-    DECLARE @NuevoCCV VARCHAR(4);
-    DECLARE @Largo INT;
-    DECLARE @Contador INT;
-    DECLARE @NombreMovimiento VARCHAR(64);
-	DECLARE @idMotivoInvalidacion INT;
-	DECLARE @Referencia VARCHAR(64);
+		-- Crear una tabla temporal para las tarjetas inactivadas
+		DECLARE @TarjetasInactivadas TABLE (
+			id INT IDENTITY(1,1),
+			idTC VARCHAR(64),
+			TipoTC VARCHAR(64),
+			FechaInvalidacion DATE,
+			idMotivoInvalidacion INT
+		);
 
-	SET @NombreMovimiento = 'Renovacion de TF';
+		-- Poblar la tabla temporal con las tarjetas afectadas
+		INSERT INTO @TarjetasInactivadas
+			(idTC, TipoTC, FechaInvalidacion, idMotivoInvalidacion)
+		SELECT
+			CASE
+				WHEN I.idTCA IS NOT NULL THEN I.idTCA
+				WHEN I.idTCM IS NOT NULL THEN I.idTCM
+			END,
+			CASE
+				WHEN I.idTCA IS NOT NULL THEN 'TCA'
+				WHEN I.idTCM IS NOT NULL THEN 'TCM'
+				ELSE NULL
+			END AS TipoTC,
+			I.FechaInvalidacion,
+			I.idMotivoInvalidacion
+		FROM inserted I
+			LEFT JOIN TCA ON I.idTCA = TCA.id
+			LEFT JOIN TCM ON I.idTCM = TCM.Codigo
+		WHERE I.EsActiva = 0;
+		-- Solo procesar tarjetas que fueron inactivadas
 
-    -- Crear una tabla temporal para las tarjetas inactivadas
-    DECLARE @TarjetasInactivadas TABLE (
-        id INT IDENTITY(1,1),
-        CodigoTC VARCHAR(64),
-        TipoTC VARCHAR(64),
-        FechaInvalidacion DATE,
-		idMotivoInvalidacion INT
-    );
+		-- Obtener el número de filas en la tabla temporal
+		SELECT @Largo = COUNT(*)
+		FROM @TarjetasInactivadas;
 
-    -- Poblar la tabla temporal con las tarjetas afectadas
-    INSERT INTO @TarjetasInactivadas
-        (CodigoTC, TipoTC, FechaInvalidacion, idMotivoInvalidacion)
-    SELECT
-        I.CodigoTC,
-        CASE
-            WHEN TCA.id IS NOT NULL THEN 'TCA'
-            WHEN TCM.id IS NOT NULL THEN 'TCM'
-            ELSE NULL
-        END AS TipoTC,
-        I.FechaInvalidacion,
-		I.idMotivoInvalidacion
-    FROM inserted I
-        LEFT JOIN TCA ON I.CodigoTC = TCA.Codigo
-        LEFT JOIN TCM ON I.CodigoTC = TCM.Codigo
-    WHERE I.EsActiva = 0;
-    -- Solo procesar tarjetas que fueron inactivadas
+		-- Inicializar el contador
+		SET @Contador = 1;
 
-    -- Obtener el número de filas en la tabla temporal
-    SELECT @Largo = COUNT(*)
-    FROM @TarjetasInactivadas;
-
-    -- Inicializar el contador
-    SET @Contador = 1;
-
-    -- Procesar cada tarjeta inactivada
-    WHILE @Contador <= @Largo
-    BEGIN
-        -- Obtener los datos de la tarjeta actual
-        SELECT
-            @CodigoTC = CodigoTC,
-            @TipoTC = TipoTC,
-            @FechaInvalidacion = FechaInvalidacion,
-			@idMotivoInvalidacion = idMotivoInvalidacion
-        FROM @TarjetasInactivadas
-        WHERE id = @Contador;
-
-        -- Validar si es TCM o TCA
-        IF @TipoTC = 'TCM'
-        BEGIN
-            -- Obtener el idTCM
-            SELECT @idTCM = TCM.id
-            FROM TCM
-            WHERE TCM.Codigo = @CodigoTC;
-
-            -- Obtener la cantidad de años para el vencimiento
-            SELECT @CantidadAnos = RN.Valor
-            FROM RN
-            WHERE RN.Nombre = 'Cantidad de Años para Vencimiento de TF'
-                AND RN.idTTCM = (
-                  SELECT idTTCM
-                FROM TCM
-                WHERE id = @idTCM
-              );
-
-            -- Calcular la nueva fecha de vencimiento
-            SELECT
-                @NuevaFechaVencimiento = DATEADD(YEAR, @CantidadAnos, @FechaInvalidacion)
-            From @TarjetasInactivadas
-            WHERE id = @Contador
-
-            SET @NuevoVIN = CAST(ABS(CHECKSUM(NEWID())) AS BIGINT);
-
-            WHILE LEN(@NuevoVIN) < 16
-            BEGIN
-                SET @NuevoVIN = @NuevoVIN + CAST(ABS(CHECKSUM(NEWID())) AS VARCHAR);
-            END
-
-            SET @NuevoVIN = LEFT(@NuevoVIN, 16);
-
-            WHILE EXISTS (SELECT 1
-            FROM TF
-            WHERE Codigo = @NuevoVIN) --Verificar si solo hay ese o como es la vara
-            BEGIN
-
-                --Hacer la vara de nuevo en caso de que haya uno ahí medio parecido en la trama
-                SET @NuevoVIN = CAST(ABS(CHECKSUM(NEWID())) AS BIGINT);
-
-                WHILE LEN(@NuevoVIN) < 16
-                BEGIN
-                    SET @NuevoVIN = @NuevoVIN + CAST(ABS(CHECKSUM(NEWID())) AS VARCHAR);
-                END
-
-                SET @NuevoVIN = LEFT(@NuevoVIN, 16);
-            END
-
-            -- Generar un nuevo CCV aleatorio (4 dígitos)
-            SET @NuevoCCV = RIGHT('0000' + CAST((ABS(CHECKSUM(NEWID())) % 10000) AS VARCHAR), 4);
-
-            -- Insertar la nueva tarjeta física
-            INSERT INTO TF (
-                Codigo, 
-                CodigoTC, 
-                FechaVencimiento, 
-                CCV, 
-                EsActiva, 
-                FechaCreacion, 
-                idMotivoInvalidacion, 
-                FechaInvalidacion
-                )
-            VALUES
-                (@NuevoVIN, 
-                @CodigoTC, 
-                @NuevaFechaVencimiento, 
-                @NuevoCCV, 
-                1, 
-                @FechaInvalidacion, 
-                NULL,
-                NULL
-                );
-
-			SET @Referencia = LEFT(NEWID(), 5);
-			WHILE EXISTS (SELECT 1 FROM Movimiento WHERE Referencia = @Referencia)
-			BEGIN
-				SET @Referencia = LEFT(NEWID(), 5);
-			END
-            
-            INSERT INTO Movimiento (
-				Nombre,
-				idTF,
-				FechaMovimiento,
-				Monto,
-				Descripcion,
-				Referencia,
-				EsSospechoso
-			)
+		-- Procesar cada tarjeta inactivada
+		WHILE @Contador <= @Largo
+		BEGIN
+			-- Obtener los datos de la tarjeta actual
 			SELECT
-				@NombreMovimiento,
-				TF.id,
-				@FechaInvalidacion,
-				RN.Valor,
-				CASE
-					WHEN @idMotivoInvalidacion = 1 THEN 'Renovacion por Robo'
-					WHEN @idMotivoInvalidacion = 2 THEN 'Renovacion por Perdida'
-					ELSE 'Renovacion por Vencimiento'
-				END,
-				@Referencia,
-				0
-			FROM TF
-			INNER JOIN RN ON RN.Nombre = 'Cargo renovacion de TF de TCM'
-                AND RN.idTTCM = (
-					SELECT idTTCM
-						FROM TCM
-					WHERE id = @idTCM
+				@idTC = idTC,
+				@TipoTC = TipoTC,
+				@FechaInvalidacion = FechaInvalidacion,
+				@idMotivoInvalidacion = idMotivoInvalidacion
+			FROM @TarjetasInactivadas
+			WHERE id = @Contador;
+
+			-- Validar si es TCM o TCA
+			IF @TipoTC = 'TCM'
+			BEGIN
+
+				-- Obtener la cantidad de años para el vencimiento
+				SELECT @CantidadAnos = RN.Valor
+				FROM RN
+				WHERE RN.Nombre = 'Cantidad de Años para Vencimiento de TF'
+					AND RN.idTTCM = (
+					  SELECT idTTCM
+					FROM TCM
+					WHERE id = @idTC
+				  );
+
+				-- Calcular la nueva fecha de vencimiento
+				SELECT
+					@NuevaFechaVencimiento = DATEADD(YEAR, @CantidadAnos, @FechaInvalidacion)
+				From @TarjetasInactivadas
+				WHERE id = @Contador
+
+				SET @NuevoVIN = CAST(ABS(CHECKSUM(NEWID())) AS BIGINT);
+
+				WHILE LEN(@NuevoVIN) < 16
+				BEGIN
+					SET @NuevoVIN = @NuevoVIN + CAST(ABS(CHECKSUM(NEWID())) AS VARCHAR);
+				END
+
+				SET @NuevoVIN = LEFT(@NuevoVIN, 16);
+
+				WHILE EXISTS (SELECT 1
+				FROM TF
+				WHERE Codigo = @NuevoVIN) --Verificar si solo hay ese o como es la vara
+				BEGIN
+
+					--Hacer la vara de nuevo en caso de que haya uno ahí medio parecido en la trama
+					SET @NuevoVIN = CAST(ABS(CHECKSUM(NEWID())) AS BIGINT);
+
+					WHILE LEN(@NuevoVIN) < 16
+					BEGIN
+						SET @NuevoVIN = @NuevoVIN + CAST(ABS(CHECKSUM(NEWID())) AS VARCHAR);
+					END
+
+					SET @NuevoVIN = LEFT(@NuevoVIN, 16);
+				END
+
+				-- Generar un nuevo CCV aleatorio (4 dígitos)
+				SET @NuevoCCV = RIGHT('0000' + CAST((ABS(CHECKSUM(NEWID())) % 10000) AS VARCHAR), 4);
+
+				-- Insertar la nueva tarjeta física
+				INSERT INTO TF (
+					Codigo, 
+					idTCM, 
+					FechaVencimiento, 
+					CCV, 
+					EsActiva, 
+					FechaCreacion
 					)
-			WHERE TF.Codigo = @NuevoVIN
+				VALUES
+					(@NuevoVIN, 
+					@idTC, 
+					@NuevaFechaVencimiento, 
+					@NuevoCCV, 
+					1, 
+					@FechaInvalidacion
+					);
 
-        END
-        ELSE IF @TipoTC = 'TCA'
-        BEGIN
-            -- Obtener el idTCM asociado a la TCA
-            SELECT @idTCM = TCA.idTCM
-            FROM TCA
-            WHERE TCA.Codigo = @CodigoTC;
+				SET @Referencia = LEFT(NEWID(), 5);
+				WHILE EXISTS (SELECT 1 FROM Movimiento WHERE Referencia = @Referencia)
+				BEGIN
+					SET @Referencia = LEFT(NEWID(), 5);
+				END
+            
+				INSERT INTO Movimiento (
+					idTM,
+					idEC,
+					idTF,
+					FechaMovimiento,
+					Monto,
+					Descripcion,
+					Referencia
+				)
+				SELECT
+					9,
+					EC.id,
+					TF.id,
+					@FechaInvalidacion,
+					RN.Valor,
+					CASE
+						WHEN @idMotivoInvalidacion = 1 THEN 'Renovacion por Robo'
+						WHEN @idMotivoInvalidacion = 2 THEN 'Renovacion por Perdida'
+						ELSE 'Renovacion por Vencimiento'
+					END,
+					@Referencia
+				FROM TF
+				INNER JOIN RN ON RN.Nombre = 'Cargo renovacion de TF de TCM'
+					AND RN.idTTCM = (
+						SELECT idTTCM
+							FROM TCM
+						WHERE id = @idTC
+						)
+				INNER JOIN EstadoCuenta EC ON EC.idTCM = @idTC 
+					AND DATEDIFF(MONTH, @FechaInvalidacion, EC.FechaCorte) BETWEEN 0 AND 1
+				WHERE TF.Codigo = @NuevoVIN
 
-            -- Obtener la cantidad de años para el vencimiento
-            SELECT @CantidadAnos = RN.Valor
-            FROM RN
-            WHERE RN.Nombre = 'Cantidad de Años para Vencimiento de TF'
-                AND RN.idTTCM = (
-                  SELECT idTTCM
-                FROM TCM
-                WHERE id = @idTCM
-              );
+			END
+			ELSE IF @TipoTC = 'TCA'
+			BEGIN
+				-- Obtener el idTCM asociado a la TCA
+				SELECT @idTCM = TCA.idTCM
+				FROM TCA
+				WHERE TCA.id = @idTC;
 
-            -- Calcular la nueva fecha de vencimiento
-            -- Calcular la nueva fecha de vencimiento
-            SELECT
-                @NuevaFechaVencimiento = DATEADD(YEAR, @CantidadAnos, @FechaInvalidacion)
-            From @TarjetasInactivadas
-            WHERE id = @Contador
+				-- Obtener la cantidad de años para el vencimiento
+				SELECT @CantidadAnos = RN.Valor
+				FROM RN
+				WHERE RN.Nombre = 'Cantidad de Años para Vencimiento de TF'
+					AND RN.idTTCM = (
+					  SELECT idTTCM
+					FROM TCM
+					WHERE id = @idTCM
+				  );
 
-            SET @NuevoVIN = CAST(ABS(CHECKSUM(NEWID())) AS BIGINT);
+				-- Calcular la nueva fecha de vencimiento
+				-- Calcular la nueva fecha de vencimiento
+				SELECT
+					@NuevaFechaVencimiento = DATEADD(YEAR, @CantidadAnos, @FechaInvalidacion)
+				From @TarjetasInactivadas
+				WHERE id = @Contador
 
-            WHILE LEN(@NuevoVIN) < 16
-            BEGIN
-                SET @NuevoVIN = @NuevoVIN + CAST(ABS(CHECKSUM(NEWID())) AS VARCHAR);
-            END
+				SET @NuevoVIN = CAST(ABS(CHECKSUM(NEWID())) AS BIGINT);
 
-            SET @NuevoVIN = LEFT(@NuevoVIN, 16);
+				WHILE LEN(@NuevoVIN) < 16
+				BEGIN
+					SET @NuevoVIN = @NuevoVIN + CAST(ABS(CHECKSUM(NEWID())) AS VARCHAR);
+				END
 
-            WHILE EXISTS (SELECT 1
-            FROM TF
-            WHERE Codigo = @NuevoVIN) --Verificar si solo hay ese o como es la vara
-            BEGIN
+				SET @NuevoVIN = LEFT(@NuevoVIN, 16);
 
-                --Hacer la vara de nuevo en caso de que haya uno ahí medio parecido en la trama
-                SET @NuevoVIN = CAST(ABS(CHECKSUM(NEWID())) AS BIGINT);
+				WHILE EXISTS (SELECT 1
+				FROM TF
+				WHERE Codigo = @NuevoVIN) --Verificar si solo hay ese o como es la vara
+				BEGIN
 
-                WHILE LEN(@NuevoVIN) < 16
-                BEGIN
-                    SET @NuevoVIN = @NuevoVIN + CAST(ABS(CHECKSUM(NEWID())) AS VARCHAR);
-                END
+					--Hacer la vara de nuevo en caso de que haya uno ahí medio parecido en la trama
+					SET @NuevoVIN = CAST(ABS(CHECKSUM(NEWID())) AS BIGINT);
 
-                SET @NuevoVIN = LEFT(@NuevoVIN, 16);
-            END
+					WHILE LEN(@NuevoVIN) < 16
+					BEGIN
+						SET @NuevoVIN = @NuevoVIN + CAST(ABS(CHECKSUM(NEWID())) AS VARCHAR);
+					END
 
-            -- Generar un nuevo CCV aleatorio (3 dígitos)
-            SET @NuevoCCV = RIGHT('0000' + CAST((ABS(CHECKSUM(NEWID())) % 1000) AS VARCHAR), 4);
+					SET @NuevoVIN = LEFT(@NuevoVIN, 16);
+				END
 
-            -- Insertar la nueva tarjeta física
-            INSERT INTO TF (
-                Codigo, 
-                CodigoTC, 
-                FechaVencimiento, 
-                CCV, 
-                EsActiva, 
-                FechaCreacion, 
-                idMotivoInvalidacion,
-                FechaInvalidacion
-                )
-            VALUES (
-                @NuevoVIN, 
-                @CodigoTC, 
-                @NuevaFechaVencimiento, 
-                @NuevoCCV, 
-                1, 
-                @FechaInvalidacion, 
-                NULL,
-                NULL
-                );
+				-- Generar un nuevo CCV aleatorio (3 dígitos)
+				SET @NuevoCCV = RIGHT('0000' + CAST((ABS(CHECKSUM(NEWID())) % 1000) AS VARCHAR), 4);
+
+				-- Insertar la nueva tarjeta física
+				INSERT INTO TF (
+					Codigo, 
+					idTCA, 
+					FechaVencimiento, 
+					CCV, 
+					EsActiva, 
+					FechaCreacion
+					)
+				VALUES (
+					@NuevoVIN, 
+					@idTC, 
+					@NuevaFechaVencimiento, 
+					@NuevoCCV, 
+					1, 
+					@FechaInvalidacion
+					);
 			
-			SET @Referencia = LEFT(NEWID(), 5);
-			WHILE EXISTS (SELECT 1 FROM Movimiento WHERE Referencia = @Referencia)
-			BEGIN
 				SET @Referencia = LEFT(NEWID(), 5);
+				WHILE EXISTS (SELECT 1 FROM Movimiento WHERE Referencia = @Referencia)
+				BEGIN
+					SET @Referencia = LEFT(NEWID(), 5);
+				END
+            
+            
+				INSERT INTO Movimiento (
+					idTM,
+					idEC,
+					idTF,
+					FechaMovimiento,
+					Monto,
+					Descripcion,
+					Referencia
+				)
+				SELECT
+					9,
+					EC.id,
+					TF.id,
+					@FechaInvalidacion,
+					RN.Valor,
+					CASE
+						WHEN @idMotivoInvalidacion = 1 THEN 'Renovacion por Robo'
+						WHEN @idMotivoInvalidacion = 2 THEN 'Renovacion por Perdida'
+						ELSE 'Renovacion por Vencimiento'
+					END,
+					@Referencia
+				FROM TF
+				INNER JOIN RN ON RN.Nombre = 'Cargo renovacion de TF de TCA'
+					AND RN.idTTCM = (
+						SELECT idTTCM
+							FROM TCM
+						WHERE id = @idTCM
+						)
+				INNER JOIN EstadoCuenta EC ON EC.idTCM = @idTCM 
+					AND DATEDIFF(MONTH, @FechaInvalidacion, EC.FechaCorte) BETWEEN 0 AND 1
+				WHERE TF.Codigo = @NuevoVIN
 			END
-            
-            
-            INSERT INTO Movimiento (
-				Nombre,
-				idTF,
-				FechaMovimiento,
-				Monto,
-				Descripcion,
-				Referencia,
-				EsSospechoso
-			)
-			SELECT
-				@NombreMovimiento,
-				TF.id,
-				@FechaInvalidacion,
-				RN.Valor,
-				CASE
-					WHEN @idMotivoInvalidacion = 1 THEN 'Renovacion por Robo'
-					WHEN @idMotivoInvalidacion = 2 THEN 'Renovacion por Perdida'
-					ELSE 'Renovacion por Vencimiento'
-				END,
-				@Referencia,
-				0
-			FROM TF
-			INNER JOIN RN ON RN.Nombre = 'Cargo renovacion de TF de TCA'
-                AND RN.idTTCM = (
-					SELECT idTTCM
-						FROM TCM
-					WHERE id = @idTCM
-					)
-			WHERE TF.Codigo = @NuevoVIN
-        END
 
-        -- Incrementar el contador
-        SET @Contador = @Contador + 1;
-    END
+			-- Incrementar el contador
+			SET @Contador = @Contador + 1;
+		END
+	END TRY
+	BEGIN CATCH
+		-- Rollback en caso de error
+        IF @@TRANCOUNT > 0 
+        BEGIN
+            ROLLBACK TRANSACTION;
+        END;
+
+        -- Registrar el error en la tabla DBError
+        INSERT INTO [sistemaTarjetaCredito].[dbo].[DBError]
+        (
+            ErrorUsername,
+            ErrorNumber,
+            ErrorState,
+            ErrorSeverity,
+            ErrorLine,
+            ErrorProcedure,
+            ErrorMessage,
+            ErrorDateTime
+        )
+        VALUES
+        (
+            SUSER_NAME(),
+            ERROR_NUMBER(),
+            ERROR_STATE(),
+            ERROR_SEVERITY(),
+            ERROR_LINE(),
+            ERROR_PROCEDURE(),
+            ERROR_MESSAGE(),
+            GETDATE()
+        );
+	END CATCH
 END;
 GO
 
@@ -411,7 +503,7 @@ BEGIN
 
     -- Variables para manejar cada fila del movimiento insertado
     DECLARE @idTF INT;
-    DECLARE @CodigoTC VARCHAR(64);
+    DECLARE @idTC VARCHAR(64);
     DECLARE @TipoTC VARCHAR(4);
     DECLARE @NombreMovimiento VARCHAR(64);
     DECLARE @Monto MONEY;
@@ -419,42 +511,52 @@ BEGIN
 	DECLARE @Largo INT;
 	DECLARE @Contador INT;
 
+	INSERT INTO MovimientoSospechoso(
+		idMovimiento
+	)
+	SELECT I.id
+	FROM inserted I
+	INNER JOIN TF ON TF.id = I.idTF
+	WHERE TF.EsActiva = 0;
+
 	DECLARE @MovimientoNoSospechoso TABLE (
 		id INT IDENTITY(1,1),
 		idTF INT,
 		Nombre VARCHAR(64),
 		Monto MONEY,
-		CodigoTC VARCHAR(64),
+		idTC VARCHAR(64),
 		TipoTC VARCHAR(8),
 		FechaMovimiento DATE
-
 	)
 
 	INSERT INTO @MovimientoNoSospechoso (
 		idTF,
 		Nombre,
 		Monto,
-		CodigoTC,
+		idTC,
 		TipoTC,
 		FechaMovimiento
 	)
     -- Procesar cada fila del conjunto insertado
     SELECT
         I.idTF,
-        I.Nombre,
+        TM.Nombre,
         I.Monto,
-        TF.CodigoTC,
+		CASE
+			WHEN TF.idTCA IS NOT NULL THEN TF.idTCA
+			WHEN TF.idTCM IS NOT NULL THEN TF.idTCM
+            ELSE NULL
+        END,
         CASE
-			WHEN TCA.id IS NOT NULL THEN 'TCA'
-			WHEN TCM.id IS NOT NULL THEN 'TCM'
+			WHEN TF.idTCA IS NOT NULL THEN 'TCA'
+			WHEN TF.idTCM IS NOT NULL THEN 'TCM'
             ELSE NULL
         END,
 		I.FechaMovimiento
     FROM inserted I
         LEFT JOIN TF ON I.idTF = TF.id
-        LEFT JOIN TCA ON TCA.Codigo = TF.CodigoTC
-        LEFT JOIN TCM ON TCM.Codigo = TF.CodigoTC
-	WHERE I.EsSospechoso = 0;
+		INNER JOIN TM ON TM.id = I.idTM
+	WHERE I.id NOT IN (SELECT idMovimiento FROM MovimientoSospechoso)
 
 	SET @Contador = 1;
 
@@ -467,7 +569,7 @@ BEGIN
 			@idTF = MNS.idTF,
 			@NombreMovimiento = MNS.Nombre,
 			@Monto = MNS.Monto,
-			@CodigoTC = MNS.CodigoTC,
+			@idTC = MNS.idTC,
 			@TipoTC = MNS.TipoTC,
 			@FechaMovimiento = MNS.FechaMovimiento
 		FROM @MovimientoNoSospechoso MNS
@@ -528,7 +630,7 @@ BEGIN
 				EC.SumaDebitos = EC.SumaDebitos +
 					CASE WHEN TM.Accion = 'Debito' THEN @Monto ELSE 0 END
 			FROM EstadoCuenta EC
-				INNER JOIN TCM ON EC.idTCM = TCM.id AND TCM.Codigo = @CodigoTC
+				INNER JOIN TCM ON EC.idTCM = TCM.id AND TCM.id = @idTC
 				INNER JOIN TM ON TM.Nombre = @NombreMovimiento
 			WHERE DATEDIFF(MONTH, @FechaMovimiento, EC.FechaCorte) BETWEEN 0 AND 1;
 		END
@@ -588,7 +690,7 @@ BEGIN
 				EC.SumaDebitos = EC.SumaDebitos +
 					CASE WHEN TM.Accion = 'Debito' THEN @Monto ELSE 0 END
 			FROM EstadoCuenta EC
-				INNER JOIN TCA ON EC.idTCM = TCA.idTCM AND TCA.Codigo = @CodigoTC
+				INNER JOIN TCA ON EC.idTCM = TCA.idTCM AND TCA.id = @idTC
 				INNER JOIN TM ON TM.Nombre = @NombreMovimiento
 			WHERE DATEDIFF(MONTH, @FechaMovimiento, EC.FechaCorte) BETWEEN 0 AND 1;
 
@@ -619,7 +721,7 @@ BEGIN
 					CASE WHEN TM.Accion = 'Debito' THEN @Monto ELSE 0 END
 			FROM SubEstadoCuenta SEC
 				INNER JOIN TM ON TM.Nombre = @NombreMovimiento
-				INNER JOIN TCA ON TCA.Codigo = @CodigoTC AND SEC.idTCA = TCA.id
+				INNER JOIN TCA ON TCA.id = @idTC AND SEC.idTCA = TCA.id
 			WHERE DATEDIFF(MONTH, @FechaMovimiento, SEC.FechaCorte) BETWEEN 0 AND 1;
 		END
 		SET @Contador = @Contador + 1;

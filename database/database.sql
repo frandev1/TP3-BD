@@ -1,11 +1,11 @@
 USE [master]
 GO
-/****** Object:  Database [sistemaTarjetaCredito]    Script Date: 20/11/2024 01:23:28 ******/
+/****** Object:  Database [sistemaTarjetaCredito]    Script Date: 2/12/2024 21:05:12 ******/
 CREATE DATABASE [sistemaTarjetaCredito]
 GO
 USE [sistemaTarjetaCredito]
 GO
-/****** Object:  Table [dbo].[DBError]    Script Date: 20/11/2024 01:23:28 ******/
+/****** Object:  Table [dbo].[DBError]    Script Date: 2/12/2024 21:05:12 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -19,14 +19,10 @@ CREATE TABLE [dbo].[DBError](
 	[ErrorLine] [int] NOT NULL,
 	[ErrorProcedure] [nvarchar](50) NOT NULL,
 	[ErrorMessage] [nvarchar](2000) NOT NULL,
-	[ErrorDateTime] [datetime] NOT NULL,
- CONSTRAINT [PK_DBError] PRIMARY KEY CLUSTERED 
-(
-	[Id] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+	[ErrorDateTime] [datetime] NOT NULL
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[EstadoCuenta]    Script Date: 20/11/2024 01:23:28 ******/
+/****** Object:  Table [dbo].[EstadoCuenta]    Script Date: 2/12/2024 21:05:12 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -36,7 +32,7 @@ CREATE TABLE [dbo].[EstadoCuenta](
 	[idTCM] [int] NOT NULL,
 	[FechaCorte] [date] NOT NULL,
 	[SaldoActual] [money] NOT NULL,
-	[PagoContratado] [money] NOT NULL,
+	[PagoContado] [money] NOT NULL,
 	[PagoMinimo] [money] NOT NULL,
 	[FechaPago] [date] NOT NULL,
 	[InteresesCorrientes] [money] NOT NULL,
@@ -54,13 +50,41 @@ CREATE TABLE [dbo].[EstadoCuenta](
 	[SumaCreditos] [money] NOT NULL,
 	[CantidadDebitos] [int] NOT NULL,
 	[SumaDebitos] [money] NOT NULL,
- CONSTRAINT [PK__EstadoCu__3213E83FAB365001] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [PK_EstadoCuenta] PRIMARY KEY CLUSTERED 
 (
 	[id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[MIT]    Script Date: 20/11/2024 01:23:28 ******/
+/****** Object:  Table [dbo].[MIC]    Script Date: 2/12/2024 21:05:12 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MIC](
+	[idMovimiento] [int] NOT NULL,
+	[idTMIC] [int] NOT NULL,
+ CONSTRAINT [PK_MIC] PRIMARY KEY CLUSTERED 
+(
+	[idMovimiento] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MIM]    Script Date: 2/12/2024 21:05:12 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MIM](
+	[idMovimiento] [int] NOT NULL,
+	[idTMIM] [int] NOT NULL,
+ CONSTRAINT [PK_MIM] PRIMARY KEY CLUSTERED 
+(
+	[idMovimiento] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MIT]    Script Date: 2/12/2024 21:05:12 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -68,33 +92,46 @@ GO
 CREATE TABLE [dbo].[MIT](
 	[id] [int] IDENTITY(1,1) NOT NULL,
 	[Nombre] [varchar](64) NOT NULL,
-PRIMARY KEY CLUSTERED 
+ CONSTRAINT [PK_MIT] PRIMARY KEY CLUSTERED 
 (
 	[id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[Movimiento]    Script Date: 20/11/2024 01:23:28 ******/
+/****** Object:  Table [dbo].[Movimiento]    Script Date: 2/12/2024 21:05:12 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[Movimiento](
 	[id] [int] IDENTITY(1,1) NOT NULL,
-	[Nombre] [varchar](64) NOT NULL,
+	[idEC] [int] NOT NULL,
+	[idTM] [int] NOT NULL,
 	[idTF] [int] NULL,
 	[FechaMovimiento] [date] NOT NULL,
 	[Monto] [money] NOT NULL,
 	[Descripcion] [varchar](64) NOT NULL,
 	[Referencia] [varchar](64) NOT NULL,
-	[EsSospechoso] [bit] NOT NULL
-PRIMARY KEY CLUSTERED 
+ CONSTRAINT [PK_Movimiento] PRIMARY KEY CLUSTERED 
 (
 	[id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[RN]    Script Date: 20/11/2024 01:23:28 ******/
+/****** Object:  Table [dbo].[MovimientoSospechoso]    Script Date: 2/12/2024 21:05:12 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MovimientoSospechoso](
+	[idMovimiento] [int] NOT NULL,
+ CONSTRAINT [PK_MovimientoSospechoso] PRIMARY KEY CLUSTERED 
+(
+	[idMovimiento] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[RN]    Script Date: 2/12/2024 21:05:12 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -105,13 +142,13 @@ CREATE TABLE [dbo].[RN](
 	[idTTCM] [int] NOT NULL,
 	[idTRN] [int] NOT NULL,
 	[Valor] [float] NOT NULL,
-PRIMARY KEY CLUSTERED 
+ CONSTRAINT [PK_RN] PRIMARY KEY CLUSTERED 
 (
 	[id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[SubEstadoCuenta]    Script Date: 20/11/2024 01:23:28 ******/
+/****** Object:  Table [dbo].[SubEstadoCuenta]    Script Date: 2/12/2024 21:05:12 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -123,18 +160,18 @@ CREATE TABLE [dbo].[SubEstadoCuenta](
 	[CantidadOperacionesATM] [int] NOT NULL,
 	[CantidadOperacionesVentanilla] [int] NOT NULL,
 	[SumaCompras] [money] NOT NULL,
-    [CantidadCompras] [int] NOT NULL,
+	[CantidadCompras] [int] NOT NULL,
 	[SumaRetiros] [money] NOT NULL,
 	[CantidadRetiros] [int] NOT NULL,
 	[SumaCreditos] [money] NOT NULL,
 	[SumaDebitos] [money] NOT NULL,
-PRIMARY KEY CLUSTERED 
+ CONSTRAINT [PK_SubEstadoCuenta] PRIMARY KEY CLUSTERED 
 (
 	[id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[TCA]    Script Date: 20/11/2024 01:23:28 ******/
+/****** Object:  Table [dbo].[TCA]    Script Date: 2/12/2024 21:05:12 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -142,33 +179,34 @@ GO
 CREATE TABLE [dbo].[TCA](
 	[id] [int] IDENTITY(1,1) NOT NULL,
 	[idTCM] [int] NOT NULL,
-	[Codigo] [varchar](32) NOT NULL,
+	[Codigo] [varchar](64) NOT NULL,
 	[idTH] [int] NOT NULL,
-PRIMARY KEY CLUSTERED 
+ CONSTRAINT [PK_TCA] PRIMARY KEY CLUSTERED 
 (
 	[id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[TCM]    Script Date: 20/11/2024 01:23:28 ******/
+/****** Object:  Table [dbo].[TCM]    Script Date: 2/12/2024 21:05:12 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[TCM](
 	[id] [int] IDENTITY(1,1) NOT NULL,
-	[Codigo] [varchar](32) NOT NULL,
+	[Codigo] [varchar](64) NOT NULL,
 	[idTTCM] [int] NOT NULL,
+	[Saldo] [money] NOT NULL,
 	[LimiteCredito] [money] NOT NULL,
 	[idTH] [int] NOT NULL,
 	[FechaCreacion] [date] NOT NULL,
-PRIMARY KEY CLUSTERED 
+ CONSTRAINT [PK_TCM] PRIMARY KEY CLUSTERED 
 (
 	[id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[TF]    Script Date: 20/11/2024 01:23:28 ******/
+/****** Object:  Table [dbo].[TF]    Script Date: 2/12/2024 21:05:12 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -176,20 +214,21 @@ GO
 CREATE TABLE [dbo].[TF](
 	[id] [int] IDENTITY(1,1) NOT NULL,
 	[Codigo] [varchar](64) NOT NULL,
-	[CodigoTC] [varchar](64) NOT NULL,
+	[idTCM] [int] NULL,
+	[idTCA] [int] NULL,
 	[FechaVencimiento] [date] NOT NULL,
 	[CCV] [varchar](4) NOT NULL,
-	[EsActiva] [bit] NOT NULL,
 	[FechaCreacion] [date] NOT NULL,
+	[EsActiva] [bit] NOT NULL,
 	[idMotivoInvalidacion] [int] NULL,
-	[FechaInvalidacion] [date] NULL
-PRIMARY KEY CLUSTERED 
+	[FechaInvalidacion] [date] NULL,
+ CONSTRAINT [PK_TF] PRIMARY KEY CLUSTERED 
 (
 	[id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[TH]    Script Date: 20/11/2024 01:23:28 ******/
+/****** Object:  Table [dbo].[TH]    Script Date: 2/12/2024 21:05:12 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -199,15 +238,14 @@ CREATE TABLE [dbo].[TH](
 	[Nombre] [varchar](64) NOT NULL,
 	[DocumentoIdentidad] [varchar](32) NOT NULL,
 	[FechaNacimiento] [date] NOT NULL,
-	[NombreUsuario] [varchar](32) NOT NULL,
-	[Password] [varchar](32) NOT NULL,
-PRIMARY KEY CLUSTERED 
+	[idUsuario] [int] NOT NULL,
+ CONSTRAINT [PK_TH] PRIMARY KEY CLUSTERED 
 (
 	[id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[TM]    Script Date: 20/11/2024 01:23:28 ******/
+/****** Object:  Table [dbo].[TM]    Script Date: 2/12/2024 21:05:12 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -218,13 +256,13 @@ CREATE TABLE [dbo].[TM](
 	[Accion] [varchar](64) NOT NULL,
 	[AcumulaOperacionesATM] [bit] NOT NULL,
 	[AcumulaOperacionesVentana] [bit] NOT NULL,
-PRIMARY KEY CLUSTERED 
+ CONSTRAINT [PK_TM] PRIMARY KEY CLUSTERED 
 (
 	[id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[TMIC]    Script Date: 20/11/2024 01:23:28 ******/
+/****** Object:  Table [dbo].[TMIC]    Script Date: 2/12/2024 21:05:12 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -232,13 +270,13 @@ GO
 CREATE TABLE [dbo].[TMIC](
 	[id] [int] IDENTITY(1,1) NOT NULL,
 	[Nombre] [varchar](64) NOT NULL,
-PRIMARY KEY CLUSTERED 
+ CONSTRAINT [PK_TMIC] PRIMARY KEY CLUSTERED 
 (
 	[id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[TMIM]    Script Date: 20/11/2024 01:23:28 ******/
+/****** Object:  Table [dbo].[TMIM]    Script Date: 2/12/2024 21:05:12 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -246,13 +284,13 @@ GO
 CREATE TABLE [dbo].[TMIM](
 	[id] [int] IDENTITY(1,1) NOT NULL,
 	[Nombre] [varchar](64) NOT NULL,
-PRIMARY KEY CLUSTERED 
+ CONSTRAINT [PK_TMIM] PRIMARY KEY CLUSTERED 
 (
 	[id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[TRN]    Script Date: 20/11/2024 01:23:28 ******/
+/****** Object:  Table [dbo].[TRN]    Script Date: 2/12/2024 21:05:12 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -261,13 +299,13 @@ CREATE TABLE [dbo].[TRN](
 	[id] [int] IDENTITY(1,1) NOT NULL,
 	[Nombre] [varchar](64) NOT NULL,
 	[Tipo] [varchar](64) NOT NULL,
-PRIMARY KEY CLUSTERED 
+ CONSTRAINT [PK_TRN] PRIMARY KEY CLUSTERED 
 (
 	[id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[TTCM]    Script Date: 20/11/2024 01:23:28 ******/
+/****** Object:  Table [dbo].[TTCM]    Script Date: 2/12/2024 21:05:12 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -275,58 +313,127 @@ GO
 CREATE TABLE [dbo].[TTCM](
 	[id] [int] IDENTITY(1,1) NOT NULL,
 	[Nombre] [varchar](64) NOT NULL,
-PRIMARY KEY CLUSTERED 
+ CONSTRAINT [PK_TTCM] PRIMARY KEY CLUSTERED 
 (
 	[id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[UA]    Script Date: 20/11/2024 01:23:28 ******/
+/****** Object:  Table [dbo].[Usuario]    Script Date: 2/12/2024 21:05:12 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE TABLE [dbo].[UA](
+CREATE TABLE [dbo].[Usuario](
 	[id] [int] IDENTITY(1,1) NOT NULL,
 	[Username] [varchar](64) NOT NULL,
 	[Password] [varchar](64) NOT NULL,
-PRIMARY KEY CLUSTERED 
+	[TipoUsuario] [bit] NOT NULL,
+ CONSTRAINT [PK_Usuario] PRIMARY KEY CLUSTERED 
 (
 	[id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-ALTER TABLE [dbo].[EstadoCuenta]  WITH CHECK ADD FOREIGN KEY([idTCM])
+ALTER TABLE [dbo].[EstadoCuenta]  WITH CHECK ADD  CONSTRAINT [FK_EstadoCuenta_TCM] FOREIGN KEY([idTCM])
 REFERENCES [dbo].[TCM] ([id])
 GO
-ALTER TABLE [dbo].[Movimiento]  WITH CHECK ADD FOREIGN KEY([idTF])
+ALTER TABLE [dbo].[EstadoCuenta] CHECK CONSTRAINT [FK_EstadoCuenta_TCM]
+GO
+ALTER TABLE [dbo].[MIC]  WITH CHECK ADD  CONSTRAINT [FK_MIC_Movimiento] FOREIGN KEY([idMovimiento])
+REFERENCES [dbo].[Movimiento] ([id])
+GO
+ALTER TABLE [dbo].[MIC] CHECK CONSTRAINT [FK_MIC_Movimiento]
+GO
+ALTER TABLE [dbo].[MIC]  WITH CHECK ADD  CONSTRAINT [FK_MIC_TMIC] FOREIGN KEY([idTMIC])
+REFERENCES [dbo].[TMIC] ([id])
+GO
+ALTER TABLE [dbo].[MIC] CHECK CONSTRAINT [FK_MIC_TMIC]
+GO
+ALTER TABLE [dbo].[MIM]  WITH CHECK ADD  CONSTRAINT [FK_MIM_Movimiento] FOREIGN KEY([idMovimiento])
+REFERENCES [dbo].[Movimiento] ([id])
+GO
+ALTER TABLE [dbo].[MIM] CHECK CONSTRAINT [FK_MIM_Movimiento]
+GO
+ALTER TABLE [dbo].[MIM]  WITH CHECK ADD  CONSTRAINT [FK_MIM_TMIM] FOREIGN KEY([idTMIM])
+REFERENCES [dbo].[TMIM] ([id])
+GO
+ALTER TABLE [dbo].[MIM] CHECK CONSTRAINT [FK_MIM_TMIM]
+GO
+ALTER TABLE [dbo].[Movimiento]  WITH CHECK ADD  CONSTRAINT [FK_Movimiento_EstadoCuenta] FOREIGN KEY([idEC])
+REFERENCES [dbo].[EstadoCuenta] ([id])
+GO
+ALTER TABLE [dbo].[Movimiento] CHECK CONSTRAINT [FK_Movimiento_EstadoCuenta]
+GO
+ALTER TABLE [dbo].[Movimiento]  WITH CHECK ADD  CONSTRAINT [FK_Movimiento_TF] FOREIGN KEY([idTF])
 REFERENCES [dbo].[TF] ([id])
 GO
-ALTER TABLE [dbo].[RN]  WITH CHECK ADD FOREIGN KEY([idTRN])
+ALTER TABLE [dbo].[Movimiento] CHECK CONSTRAINT [FK_Movimiento_TF]
+GO
+ALTER TABLE [dbo].[Movimiento]  WITH CHECK ADD  CONSTRAINT [FK_Movimiento_TM] FOREIGN KEY([idTM])
+REFERENCES [dbo].[TM] ([id])
+GO
+ALTER TABLE [dbo].[Movimiento] CHECK CONSTRAINT [FK_Movimiento_TM]
+GO
+ALTER TABLE [dbo].[MovimientoSospechoso]  WITH CHECK ADD  CONSTRAINT [FK_MovimientoSospechoso_Movimiento] FOREIGN KEY([idMovimiento])
+REFERENCES [dbo].[Movimiento] ([id])
+GO
+ALTER TABLE [dbo].[MovimientoSospechoso] CHECK CONSTRAINT [FK_MovimientoSospechoso_Movimiento]
+GO
+ALTER TABLE [dbo].[RN]  WITH CHECK ADD  CONSTRAINT [FK_RN_TRN] FOREIGN KEY([idTRN])
 REFERENCES [dbo].[TRN] ([id])
 GO
-ALTER TABLE [dbo].[RN]  WITH CHECK ADD FOREIGN KEY([idTTCM])
+ALTER TABLE [dbo].[RN] CHECK CONSTRAINT [FK_RN_TRN]
+GO
+ALTER TABLE [dbo].[RN]  WITH CHECK ADD  CONSTRAINT [FK_RN_TTCM] FOREIGN KEY([idTTCM])
 REFERENCES [dbo].[TTCM] ([id])
 GO
-ALTER TABLE [dbo].[SubEstadoCuenta]  WITH CHECK ADD FOREIGN KEY([idTCA])
+ALTER TABLE [dbo].[RN] CHECK CONSTRAINT [FK_RN_TTCM]
+GO
+ALTER TABLE [dbo].[SubEstadoCuenta]  WITH CHECK ADD  CONSTRAINT [FK_SubEstadoCuenta_TCA] FOREIGN KEY([idTCA])
 REFERENCES [dbo].[TCA] ([id])
 GO
-ALTER TABLE [dbo].[TCA]  WITH CHECK ADD FOREIGN KEY([idTH])
-REFERENCES [dbo].[TH] ([id])
+ALTER TABLE [dbo].[SubEstadoCuenta] CHECK CONSTRAINT [FK_SubEstadoCuenta_TCA]
 GO
 ALTER TABLE [dbo].[TCA]  WITH CHECK ADD  CONSTRAINT [FK_TCA_TCM] FOREIGN KEY([idTCM])
 REFERENCES [dbo].[TCM] ([id])
 GO
 ALTER TABLE [dbo].[TCA] CHECK CONSTRAINT [FK_TCA_TCM]
 GO
-ALTER TABLE [dbo].[TCM]  WITH CHECK ADD FOREIGN KEY([idTH])
+ALTER TABLE [dbo].[TCA]  WITH CHECK ADD  CONSTRAINT [FK_TCA_TH] FOREIGN KEY([idTH])
 REFERENCES [dbo].[TH] ([id])
 GO
-ALTER TABLE [dbo].[TCM]  WITH CHECK ADD FOREIGN KEY([idTTCM])
+ALTER TABLE [dbo].[TCA] CHECK CONSTRAINT [FK_TCA_TH]
+GO
+ALTER TABLE [dbo].[TCM]  WITH CHECK ADD  CONSTRAINT [FK_TCM_TH] FOREIGN KEY([idTH])
+REFERENCES [dbo].[TH] ([id])
+GO
+ALTER TABLE [dbo].[TCM] CHECK CONSTRAINT [FK_TCM_TH]
+GO
+ALTER TABLE [dbo].[TCM]  WITH CHECK ADD  CONSTRAINT [FK_TCM_TTCM] FOREIGN KEY([idTTCM])
 REFERENCES [dbo].[TTCM] ([id])
 GO
-ALTER TABLE [dbo].[TF]  WITH CHECK ADD FOREIGN KEY([idMotivoInvalidacion])
+ALTER TABLE [dbo].[TCM] CHECK CONSTRAINT [FK_TCM_TTCM]
+GO
+ALTER TABLE [dbo].[TF]  WITH CHECK ADD  CONSTRAINT [FK_TF_MIT] FOREIGN KEY([idMotivoInvalidacion])
 REFERENCES [dbo].[MIT] ([id])
+GO
+ALTER TABLE [dbo].[TF] CHECK CONSTRAINT [FK_TF_MIT]
+GO
+ALTER TABLE [dbo].[TF]  WITH CHECK ADD  CONSTRAINT [FK_TF_TCA] FOREIGN KEY([idTCA])
+REFERENCES [dbo].[TCA] ([id])
+GO
+ALTER TABLE [dbo].[TF] CHECK CONSTRAINT [FK_TF_TCA]
+GO
+ALTER TABLE [dbo].[TF]  WITH CHECK ADD  CONSTRAINT [FK_TF_TCM] FOREIGN KEY([idTCM])
+REFERENCES [dbo].[TCM] ([id])
+GO
+ALTER TABLE [dbo].[TF] CHECK CONSTRAINT [FK_TF_TCM]
+GO
+ALTER TABLE [dbo].[TH]  WITH CHECK ADD  CONSTRAINT [FK_TH_Usuario] FOREIGN KEY([idUsuario])
+REFERENCES [dbo].[Usuario] ([id])
+GO
+ALTER TABLE [dbo].[TH] CHECK CONSTRAINT [FK_TH_Usuario]
 GO
 USE [master]
 GO

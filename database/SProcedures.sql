@@ -117,6 +117,7 @@ BEGIN
         SET @OutResultCode = 0;
 
         DECLARE @idTH INT;
+        DECLARE @idUsuario INT;
 
         -- Obtener el id del tarjetahabiente
         SELECT @idTH = TH.id
@@ -130,8 +131,6 @@ BEGIN
             RAISERROR('Usuario no encontrado.', 16, 1);
             RETURN;
         END
-
-        BEGIN TRANSACTION
 
         -- Seleccionar solo las tarjetas asociadas al tarjetahabiente específico (TH)
         SELECT DISTINCT
@@ -155,8 +154,6 @@ BEGIN
             TCA.idTH = @idTH OR TCM.idTH = @idTH 
         ORDER BY 
             TF.FechaCreacion DESC;
-
-        COMMIT TRANSACTION
         
     END TRY
     BEGIN CATCH
@@ -417,8 +414,6 @@ AS
 BEGIN
     BEGIN TRY
 
-    BEGIN TRANSACTION
-
     SELECT
         EC.FechaCorte,
         EC.PagoMinimo,
@@ -430,8 +425,6 @@ BEGIN
     FROM EstadoCuenta EC
     WHERE EC.idTCM = @idTCM
     ORDER BY EC.FechaCorte DESC;
-
-    COMMIT TRANSACTION
 
     END TRY
     BEGIN CATCH

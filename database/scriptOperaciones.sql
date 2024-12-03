@@ -51,25 +51,38 @@ WHILE @FechaActual <= @UltimaFecha
 BEGIN
     PRINT 'Procesando fecha: ' + CONVERT(VARCHAR, @FechaActual);
 
+	INSERT INTO Usuario (Username, Password, TipoUsuario)
+	SELECT
+		T.C.value('@NombreUsuario', 'VARCHAR(50)'),
+        T.C.value('@Password', 'VARCHAR(50)'),
+		0
+	FROM
+		@XmlData.nodes('/root/fechaOperacion') AS Fecha(C)
+        CROSS APPLY Fecha.C.nodes('NTH/NTH') AS T(C)
+	WHERE 
+        Fecha.C.value('@Fecha', 'DATE') = @FechaActual;
+
     -- Inserción en tabla TH (ejemplo)
-    INSERT INTO TH (Nombre, DocumentoIdentidad, FechaNacimiento, NombreUsuario, Password)
+    INSERT INTO TH (Nombre, DocumentoIdentidad, FechaNacimiento, idUsuario)
     SELECT 
         T.C.value('@Nombre', 'VARCHAR(50)'),
         T.C.value('@ValorDocIdentidad', 'VARCHAR(20)'),
         T.C.value('@FechaNacimiento', 'DATE'),
-        T.C.value('@NombreUsuario', 'VARCHAR(50)'),
-        T.C.value('@Password', 'VARCHAR(50)')
+		U.id
     FROM 
         @XmlData.nodes('/root/fechaOperacion') AS Fecha(C)
         CROSS APPLY Fecha.C.nodes('NTH/NTH') AS T(C)
+		INNER JOIN Usuario U ON U.Username = T.C.value('@NombreUsuario', 'VARCHAR(50)')
+			AND U.Password = T.C.value('@Password', 'VARCHAR(50)')
     WHERE 
         Fecha.C.value('@Fecha', 'DATE') = @FechaActual;
 
     -- Inserción en TCM basada en la fecha actual
-    INSERT INTO TCM (Codigo, idTTCM, LimiteCredito, idTH, FechaCreacion)
+    INSERT INTO TCM (Codigo, idTTCM, Saldo, LimiteCredito, idTH, FechaCreacion)
     SELECT 
         T.C.value('@Codigo', 'VARCHAR(32)') AS Codigo,          -- Código de la tarjeta de crédito
         TTCM.id AS idTTCM,                                      -- ID del tipo de tarjeta
+		0,
         T.C.value('@LimiteCredito', 'MONEY') AS LimiteCredito,  -- Límite de crédito
         TH.id AS idTH,                                          -- ID del titular
         Fecha.C.value('@Fecha', 'DATE')                                            -- Saldo inicial
@@ -95,18 +108,22 @@ BEGIN
 	WHERE Fecha.C.value('@Fecha', 'DATE') = @FechaActual;
 
     -- Inserta datos en la tabla TF (Codigo, idTC, FechaVencimiento, CCV, EsActiva, FechaCreacion)
-    INSERT INTO TF (Codigo, CodigoTC, FechaVencimiento, CCV, EsActiva, FechaCreacion)
-    SELECT
-        T.C.value('@Codigo', 'VARCHAR(64)') AS Codigo,
-        T.C.value('@TCAsociada', 'VARCHAR(64)') AS CodigoTC,
-        CONVERT(DATE, '01/' + T.C.value('@FechaVencimiento', 'VARCHAR(10)'), 103) AS FechaVencimiento,
-        T.C.value('@CCV', 'VARCHAR(4)') AS CCV,
-        1 AS EsActiva,
-        Fecha.C.value('@Fecha', 'DATE') AS FechaCreacion
-    FROM 
-        @XmlData.nodes('/root/fechaOperacion') AS Fecha(C)
-        CROSS APPLY Fecha.C.nodes('NTF/NTF') AS T(C)
+    INSERT INTO TF (Codigo, idTCM, idTCA, FechaVencimiento, CCV, EsActiva, FechaCreacion)
+	SELECT
+		T.C.value('@Codigo', 'VARCHAR(64)') AS Codigo, -- Código único de tarjeta
+		TCM.id AS idTCM, -- id del TCM si existe
+		TCA.id AS idTCA, -- id del TCA si existe
+		CONVERT(DATE, '01/' + T.C.value('@FechaVencimiento', 'VARCHAR(10)'), 103) AS FechaVencimiento, -- Fecha en formato correcto
+		T.C.value('@CCV', 'VARCHAR(4)') AS CCV, -- CCV de la tarjeta
+		1 AS EsActiva, -- Activar por defecto
+		Fecha.C.value('@Fecha', 'DATE') AS FechaCreacion -- Fecha de creación
+	FROM 
+		@XmlData.nodes('/root/fechaOperacion') AS Fecha(C)
+		CROSS APPLY Fecha.C.nodes('NTF/NTF') AS T(C)
+		LEFT JOIN TCM ON TCM.Codigo = T.C.value('@TCAsociada', 'VARCHAR(64)') -- Relación con TCM
+		LEFT JOIN TCA ON TCA.Codigo = T.C.value('@TCAsociada', 'VARCHAR(64)') -- Relación con TCA
 	WHERE Fecha.C.value('@Fecha', 'DATE') = @FechaActual;
+
     
     -- Validar si hay nodos de RenovaciónRoboPerdida para la fecha actual
     IF EXISTS (
@@ -141,30 +158,44 @@ BEGIN
 		FechaInvalidacion = @FechaActual
 	WHERE FechaVencimiento = @FechaActual AND EsActiva = 1
 
-        
-    INSERT INTO Movimiento (Nombre, idTF, FechaMovimiento, Monto, Descripcion, Referencia, EsSospechoso)
-    SELECT
-        T.C.value('@Nombre', 'VARCHAR(50)'),
-        TF.id AS idTF,
-        T.C.value('@FechaMovimiento', 'DATE'),
-        T.C.value('@Monto', 'MONEY'),
-        T.C.value('@Descripcion', 'VARCHAR(64)'),
-        T.C.value('@Referencia', 'VARCHAR(64)'),
-        CASE
-            WHEN TF.EsActiva = 0 THEN 1
-            WHEN TF.EsActiva = 1 THEN 0
-        END
-    FROM 
-        @XmlData.nodes('/root/fechaOperacion') AS Fecha(C)
-        CROSS APPLY Fecha.C.nodes('Movimiento/Movimiento') AS T(C)
-        JOIN TF ON TF.Codigo = T.C.value('@TF', 'VARCHAR(20)') -- Join con TCA usando Codigo para obtener idTF
+	INSERT INTO Movimiento (
+		idTM, 
+		idEC, 
+		idTF, 
+		FechaMovimiento, 
+		Monto, 
+		Descripcion, 
+		Referencia
+	)
+	SELECT
+		TM.id AS idTM,
+		ISNULL(
+			EC.id, -- Caso 1: Cuando el idTCM está disponible directamente
+			EC_TCA.id -- Caso 2: Cuando el idTCA debe derivarse al idTCM
+		) AS idEC,
+		TF.id AS idTF,
+		T.C.value('@FechaMovimiento', 'DATE') AS FechaMovimiento,
+		T.C.value('@Monto', 'MONEY') AS Monto,
+		T.C.value('@Descripcion', 'VARCHAR(64)') AS Descripcion,
+		T.C.value('@Referencia', 'VARCHAR(64)') AS Referencia
+	FROM 
+		@XmlData.nodes('/root/fechaOperacion') AS Fecha(C)
+		CROSS APPLY Fecha.C.nodes('Movimiento/Movimiento') AS T(C)
+		INNER JOIN TF ON TF.Codigo = T.C.value('@TF', 'VARCHAR(20)') -- Relación con TF
+		INNER JOIN TM ON TM.Nombre = T.C.value('@Nombre', 'VARCHAR(50)') -- Relación con TM
+		LEFT JOIN EstadoCuenta EC ON EC.idTCM = TF.idTCM 
+			AND EC.FechaCorte = @FechaActual -- Relación directa con TCM
+		LEFT JOIN TCA ON TCA.id = TF.idTCA -- Relación con TCA (si TF no tiene idTCM)
+		LEFT JOIN EstadoCuenta EC_TCA ON EC_TCA.idTCM = TCA.idTCM 
+			AND EC_TCA.FechaCorte = @FechaActual -- Relación con EstadoCuenta usando TCA
 	WHERE Fecha.C.value('@Fecha', 'DATE') = @FechaActual;
+
 
     INSERT INTO EstadoCuenta (
         idTCM,
         FechaCorte,
         SaldoActual,
-        PagoContratado,
+        PagoContado,
         PagoMinimo,
         FechaPago,
         InteresesCorrientes,
@@ -249,12 +280,11 @@ PRINT 'Proceso completado.';
 USE [sistemaTarjetaCredito]
 GO
 
-
+SELECT * FROM Usuario;
 SELECT * FROM TH;
 SELECT * FROM TCM;
 SELECT * FROM TCA;
 SELECT * FROM TF;
-SELECT * FROM MIT;
 SELECT * FROM Movimiento;
 SELECT * FROM EstadoCuenta;
 SELECT * FROM SubEstadoCuenta;
